@@ -209,14 +209,23 @@ function Header() {
 
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
-  useEffect(() => { if (!hash) window.scrollTo(0, 0); }, [pathname, hash]);
+  useEffect(() => {
+    if (!hash) {
+      window.scrollTo(0, 0);
+      return undefined;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(decodeURIComponent(hash.slice(1)))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [pathname, hash]);
   return null;
 }
 
 function Footer() {
   const shared = usePublicContent();
   const settings = shared?.settings || read(STORAGE.settings, {});
-  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Studio dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<p><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</p><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
+  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Studio dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<Link className="social-link" to="/#location"><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</Link><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
 }
 
 function ButtonLink({ to, children, className = '' }) { return <Link className={`button ${className}`} to={to}>{children}<ArrowRight size={16}/></Link>; }
@@ -352,7 +361,7 @@ function Home() {
     <section className="custom-feature"><div className="custom-photo"><img src={homeProducts[20].image} alt="A handmade chocolate gift assortment"/></div><div className="custom-feature-copy"><span className="eyebrow">Your idea, our little workshop</span><h2>Tell us what<br/>you’re <em>imagining.</em></h2><p>Send a description, a reference photo and your collection date. We’ll talk through the details and price together before anything is made.</p><ButtonLink to="/custom">Start a custom order</ButtonLink><span className="small-note">A few words or a full moodboard — either is lovely.</span></div></section>
     <section className="promise-section"><div className="promise-heading"><span className="eyebrow">Good to know</span><h2>A few things before<br/><em>the first bite.</em></h2></div><div className="promise-content"><OrderNote compact/><div className="faq-mini"><h3>What about allergies?</h3><p>Please include any allergies in your request. We’ll confirm the ingredients and whether we can accommodate them before you place your order.</p><Link to="/contact">Ask us a question <ArrowRight size={14}/></Link></div></div></section>
     <section className="reviews-section"><div className="reviews-heading"><span className="eyebrow">A few kind words</span><h2>From our table <em>to yours.</em></h2><Link to="/reviews" className="text-link">Read all reviews <ArrowRight size={15}/></Link></div><ReviewCarousel reviews={reviewItems}/></section>
-    <section className="home-location"><div className="home-location-copy"><span className="eyebrow">Find Sukkar</span><h2>A little sweetness,<br/><em>close to home.</em></h2><p>Visit us in person or open the map for directions to our location.</p><div className="home-location-address"><MapPin size={17}/><span>{location}</span></div><a className="button" href={directionsUrl} target="_blank" rel="noreferrer">Get directions <ArrowRight size={16}/></a></div><div className="home-location-map"><iframe title={`Map showing Sukkar Chocolate at ${location}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=16&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div></section>
+    <section className="home-location" id="location"><div className="home-location-copy"><span className="eyebrow">Find Sukkar</span><h2>A little sweetness,<br/><em>close to home.</em></h2><p>Visit us in person or open the map for directions to our location.</p><div className="home-location-address"><MapPin size={17}/><span>{location}</span></div><a className="button" href={directionsUrl} target="_blank" rel="noreferrer">Get directions <ArrowRight size={16}/></a></div><div className="home-location-map"><iframe title={`Map showing Sukkar Chocolate at ${location}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=16&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div></section>
     </main>;
 }
 
