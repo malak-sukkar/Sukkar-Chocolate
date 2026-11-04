@@ -134,3 +134,4 @@
 .review-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:20px}.review-actions .button{min-height:42px;padding:11px 17px;font-size:11px}.review-actions .collected-button{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:0 10px;border:1px solid transparent;border-radius:2px;text-decoration:none}.review-actions .collected-button:hover{border-color:var(--line);background:#f8f5ee;color:var(--rose)}@media(max-width:640px){.review-actions{gap:10px;margin-top:16px}}
 .reviews-load-more{display:flex;justify-content:center;margin:-44px 0 55px}.reviews-load-more .button{min-width:180px}@media(max-width:640px){.reviews-load-more{margin:-22px 0 40px}}
 .admin-settings .form-grid small.full-field{margin-top:-7px;color:#82766c;font-size:10px;line-height:1.6}
+@media(max-width:640px){input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),textarea,select{font-size:16px!important}}
