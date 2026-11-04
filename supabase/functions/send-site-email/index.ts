@@ -38,7 +38,10 @@ const formatCollectionTime = (value: unknown) => {
 function getSiteUrl(request: Request) {
   const candidate = Deno.env.get('SITE_URL') || request.headers.get('origin') || '';
   try {
-    const site = new URL(candidate);
+    let site = new URL(candidate);
+    if (['localhost', '127.0.0.1'].includes(site.hostname)) {
+      site = new URL('https://malak-sukkar.github.io/Sukkar-Chocolate/');
+    }
     if (site.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(site.hostname)) throw new Error();
     const basePath = site.pathname.replace(/\/+$/, '');
     return `${site.origin}${basePath}`;
