@@ -135,3 +135,4 @@
 .reviews-load-more{display:flex;justify-content:center;margin:-44px 0 55px}.reviews-load-more .button{min-width:180px}@media(max-width:640px){.reviews-load-more{margin:-22px 0 40px}}
 .admin-settings .form-grid small.full-field{margin-top:-7px;color:#82766c;font-size:10px;line-height:1.6}
 @media(max-width:640px){input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]),textarea,select{font-size:16px!important}}
+@media(max-width:640px){.gallery-grid{columns:initial;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.gallery-item{height:clamp(210px,62vw,250px);margin:0}.gallery-item img{height:100%;min-height:0;max-height:none;object-fit:cover}}
