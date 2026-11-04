@@ -1,0 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;800&display=swap');
+
+:root{font-family:Arial,Helvetica,sans-serif;--serif:Georgia,'Times New Roman',Times,serif}
+body,button,input,textarea,select{font-family:Arial,Helvetica,sans-serif}
+h1,h2,h3{font-family:Georgia,'Times New Roman',Times,serif}
+.hero h1,.about h1{font-family:Georgia,'Times New Roman',Times,serif!important}
+.hero h2,.about h2{font-family:'Dancing Script',cursive!important;font-weight:800!important}
