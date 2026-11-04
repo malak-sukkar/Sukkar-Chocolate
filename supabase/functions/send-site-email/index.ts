@@ -167,11 +167,11 @@ Deno.serve(async (request) => {
         subject = `Update about Sukkar order ${order.id}`;
         text = `Hello ${name},\n\nThank you for your Sukkar order request ${order.id}. We’re sorry, but we can’t accept this request. Please reply to this email if you’d like to discuss another date or idea.`;
       } else if (type === 'admin_price_proposal') {
-        const orderUrl = `${getSiteUrl(request)}/my-orders#order-${encodeURIComponent(order.id)}`;
+        const orderUrl = 'https://malak-sukkar.github.io/Sukkar-Chocolate/my-orders';
         subject = `Price proposal for Sukkar order ${order.id}`;
         text = `Hello ${name},\n\nWe’ve accepted your Sukkar order request ${order.id} and propose a price of ${order.agreed_cost || 'the amount shown in My orders'}. Open your order to accept or reject the price:\n${orderUrl}\n\nThank you!`;
         const safeOrderUrl = escapeHtml(orderUrl);
-        const html = `<div style="font-family:Arial,sans-serif;color:#382b24;line-height:1.6;max-width:560px;margin:0 auto;padding:28px"><p>Hello ${escapeHtml(name)},</p><p>We’ve accepted your Sukkar order request <strong>${escapeHtml(order.id)}</strong> and propose a price of <strong>${escapeHtml(order.agreed_cost || 'the amount shown in My orders')}</strong>.</p><p>Open your order to accept or reject the price:</p><table role="presentation" border="0" cellpadding="0" cellspacing="0" style="margin:28px 0"><tr><td bgcolor="#382b24" style="border-radius:3px"><a href="${safeOrderUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:13px 22px;background-color:#382b24;color:#fff8ec;text-decoration:none;border-radius:3px;font-weight:600">View your order</a></td></tr></table><p>If the button does not open, tap this direct link:</p><p style="overflow-wrap:anywhere"><a href="${safeOrderUrl}" target="_blank" rel="noopener noreferrer" style="color:#382b24;text-decoration:underline">${safeOrderUrl}</a></p><p>Thank you!<br/>Sukkar Chocolate</p></div>`;
+        const html = `<div style="font-family:Arial,sans-serif;color:#382b24;line-height:1.6;max-width:560px;margin:0 auto;padding:28px"><p>Hello ${escapeHtml(name)},</p><p>We’ve accepted your Sukkar order request <strong>${escapeHtml(order.id)}</strong> and propose a price of <strong>${escapeHtml(order.agreed_cost || 'the amount shown in My orders')}</strong>.</p><p>Open My Orders to accept or reject the price:</p><p style="overflow-wrap:anywhere"><a href="${safeOrderUrl}" style="color:#382b24;text-decoration:underline">${safeOrderUrl}</a></p><p>Thank you!<br/>Sukkar Chocolate</p></div>`;
         await sendEmail({ to: order.email, replyTo: await getAdminEmail(), subject, text, html });
         return response({ ok: true });
       } else {
