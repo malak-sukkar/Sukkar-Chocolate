@@ -28,6 +28,9 @@ drop policy if exists "Visitors can submit order requests" on public.orders;
 drop policy if exists "Customers can submit their own order requests" on public.orders;
 create policy "Customers can submit their own order requests" on public.orders for insert to authenticated
 with check (customer_user_id = auth.uid() and collection_date >= current_date + 3 and jsonb_array_length(photo_paths) <= 5);
+drop policy if exists "Customers can read their own orders" on public.orders;
+create policy "Customers can read their own orders" on public.orders for select to authenticated
+using (customer_user_id = auth.uid());
 create policy "Admins can read orders" on public.orders for select to authenticated using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 create policy "Admins can update orders" on public.orders for update to authenticated using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin') with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 create policy "Admins can remove collected orders" on public.orders for delete to authenticated using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');

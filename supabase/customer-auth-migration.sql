@@ -29,6 +29,10 @@ create policy "Customers can submit their own order requests" on public.orders
     and collection_date >= current_date + 3
     and jsonb_array_length(photo_paths) <= 5
   );
+drop policy if exists "Customers can read their own orders" on public.orders;
+create policy "Customers can read their own orders" on public.orders
+  for select to authenticated
+  using (customer_user_id = auth.uid());
 drop function if exists public.get_order_status(text, uuid);
 create function public.get_order_status(p_order_id text, p_tracking_token uuid)
 returns table (status text, agreed_cost text, collection_time text, preferred_collection_time text)

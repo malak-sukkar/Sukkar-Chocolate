@@ -19,13 +19,29 @@ const response = (body: Record<string, unknown>, status = 200) => Response.json(
 const validEmail = (value: unknown) => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const clean = (value: unknown, max = 4000) => String(value ?? '').trim().slice(0, max);
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
+const formatCollectionTime = (value: unknown) => {
+  const time = clean(value, 40);
+  const match = time.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
+  if (!match) return time;
+
+  let hour = Number(match[1]);
+  const minute = match[2];
+  const period = match[3]?.toUpperCase();
+  if (Number(minute) > 59 || (period ? hour < 1 || hour > 12 : hour > 23)) return time;
+  if (period) {
+    hour = hour % 12 + (period === 'PM' ? 12 : 0);
+  }
+
+  return `${hour % 12 || 12}:${minute} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
 
 function getSiteUrl(request: Request) {
   const candidate = Deno.env.get('SITE_URL') || request.headers.get('origin') || '';
   try {
     const site = new URL(candidate);
     if (site.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(site.hostname)) throw new Error();
-    return site.origin;
+    const basePath = site.pathname.replace(/\/+$/, '');
+    return `${site.origin}${basePath}`;
   } catch {
     throw new Error('The website address is not configured for order links.');
   }
@@ -44,7 +60,17 @@ async function sendEmail({ to, subject, text, html, replyTo }: { to: string; sub
       template_params: { to_email: to, subject, reply_to: replyTo || '', message_text: text, message_html: messageHtml },
     }),
   });
-  if (!result.ok) throw new Error('The email service could not send the message. Check the EmailJS service and template setup.');
+  if (!result.ok) {
+    const providerMessage = (await result.text())
+      .replaceAll(emailjsPrivateKey || '', '[redacted]')
+      .replaceAll(emailjsPublicKey || '', '[redacted]')
+      .replaceAll(emailjsServiceId || '', '[redacted]')
+      .replaceAll(emailjsTemplateId || '', '[redacted]')
+      .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, '[email]')
+      .slice(0, 1000);
+    console.error('EmailJS rejected the request', { status: result.status, message: providerMessage });
+    throw new Error('The email service could not send the message. Check the EmailJS service and template setup.');
+  }
 }
 
 async function getOrder(orderId: string) {
@@ -146,7 +172,7 @@ Deno.serve(async (request) => {
         return response({ ok: true });
       } else {
         subject = `Your Sukkar order ${order.id} is ready for collection`;
-        text = `Hello ${name},\n\nYour Sukkar order ${order.id} is ready for collection on ${order.collection_date} at ${order.collection_time}. The agreed total is ${order.agreed_cost}. We look forward to seeing you!`;
+        text = `Hello ${name},\n\nYour Sukkar order ${order.id} is ready for collection on ${order.collection_date} at ${formatCollectionTime(order.collection_time)}. The agreed total is ${order.agreed_cost}. We look forward to seeing you!`;
       }
       await sendEmail({ to: order.email, replyTo: await getAdminEmail(), subject, text });
       return response({ ok: true });

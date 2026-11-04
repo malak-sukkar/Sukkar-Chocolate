@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Eye, EyeOff, Heart, Mail, MapPin, Menu, Phone, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -208,8 +208,8 @@ function Header() {
 }
 
 function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => { window.scrollTo(0, 0); }, [pathname]);
+  const { pathname, hash } = useLocation();
+  useEffect(() => { if (!hash) window.scrollTo(0, 0); }, [pathname, hash]);
   return null;
 }
 
@@ -478,20 +478,46 @@ function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
 }
 
 function MyOrders() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [orders,setOrders]=useState(()=>normalizeOrderTimes(read(STORAGE.orders,[])));
   const [respondingOrder,setRespondingOrder]=useState(null);
   const [responseError,setResponseError]=useState('');
   const [questionOrder,setQuestionOrder]=useState(null);
   const [questionMessage,setQuestionMessage]=useState('');
+  const lastScrolledHash = useRef('');
+  useEffect(()=>{
+    if (supabaseReady && !getCustomerSession()) {
+      const next = `${location.pathname}${location.hash}`;
+      navigate(`/sign-in?next=${encodeURIComponent(next)}`, { replace: true });
+    }
+  },[location.hash, location.pathname, navigate]);
+  useEffect(()=>{
+    if (!location.hash.startsWith('#order-')) {
+      lastScrolledHash.current = '';
+      return;
+    }
+    if (lastScrolledHash.current === location.hash) return;
+    const orderId = decodeURIComponent(location.hash.slice('#order-'.length));
+    const target = document.getElementById(`order-${orderId}`);
+    if (!target) return;
+    const frame = window.requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      lastScrolledHash.current = location.hash;
+    });
+    return () => window.cancelAnimationFrame(frame);
+  },[location.hash, orders]);
   useEffect(()=>{
     let active = true;
     let refreshing = false;
     const refreshStatuses = async () => {
+      if (supabaseReady && !getCustomerSession()) return;
       if (refreshing) return;
       refreshing = true;
       try {
         const cachedOrders = normalizeOrderTimes(read(STORAGE.orders, []));
-        const next = supabaseReady ? await Promise.all(cachedOrders.map(async (order) => {
+        const customerSession = getCustomerSession();
+        const next = supabaseReady && customerSession ? await listCustomerOrders(customerSession) : supabaseReady ? await Promise.all(cachedOrders.map(async (order) => {
           if (!order.trackingToken) return order;
           try {
             const row = await getRemoteOrderStatus(order);
@@ -499,7 +525,8 @@ function MyOrders() {
           } catch { return order; }
         })) : cachedOrders;
         if (active) {
-          const visibleOrders = next.filter(Boolean);
+          const cachedById = new Map(cachedOrders.map((order) => [order.id, order]));
+          const visibleOrders = next.filter(Boolean).map((order) => ({ ...cachedById.get(order.id), ...order }));
           setOrders(visibleOrders);
           write(STORAGE.orders, visibleOrders);
         }
