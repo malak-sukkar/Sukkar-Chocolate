@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Eye, EyeOff, Heart, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Eye, EyeOff, Heart, Mail, MapPin, Menu, Phone, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -11,7 +11,6 @@ import aboutImage from './assets/about.jpg';
 import logo from './assets/logo.png';
 import './App.css';
 
-const PHONE = '963982769168';
 const SUKKAR_MAP_PIN = '34.314331,36.924356';
 const STORAGE = { orders: 'sukkar-orders', reviews: 'sukkar-reviews', settings: 'sukkar-settings', photos: 'sukkar-photos' };
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
@@ -43,8 +42,6 @@ const formatPrice = (value) => {
   if (!price) return '';
   return /\bSYP$/i.test(price) ? price : `${price} SYP`;
 };
-const whatsapp = (message) => `https://wa.me/${(read(STORAGE.settings, {}).phone || PHONE).replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
-const whatsappTo = (phone, message) => `https://wa.me/${String(phone || '').replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 
 function PickupTimePicker({ value = '', name, onChange, daytimeOnly = false, required = false }) {
   return <input
@@ -219,7 +216,7 @@ function ScrollToTop() {
 function Footer() {
   const shared = usePublicContent();
   const settings = shared?.settings || read(STORAGE.settings, {});
-  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Studio dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p><p><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</p><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
+  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Studio dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<p><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</p><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
 }
 
 function ButtonLink({ to, children, className = '' }) { return <Link className={`button ${className}`} to={to}>{children}<ArrowRight size={16}/></Link>; }
@@ -304,7 +301,7 @@ function CustomerAuth({ register = false }) {
   );
 }
 
-function OrderNote({ compact = false }) { return <div className={`order-note ${compact ? 'compact' : ''}`}><span className="note-icon"><Clock3 size={19}/></span><div><strong>Made just for you, with a little time</strong><p>Please place your order at least 3 days before collection. We’ll agree the price together over WhatsApp before we begin, and you can pay when you collect.</p></div></div>; }
+function OrderNote({ compact = false }) { return <div className={`order-note ${compact ? 'compact' : ''}`}><span className="note-icon"><Clock3 size={19}/></span><div><strong>Made just for you, with a little time</strong><p>Please place your order at least 3 days before collection. We’ll agree the price together by email before we begin, and you can pay when you collect.</p></div></div>; }
 
 function ReviewCarousel({ reviews }) {
   const [index, setIndex] = useState(0);
@@ -342,8 +339,10 @@ function OrderPhotos({ paths, previews, session }) {
 
 function Home() {
   const shared = usePublicContent();
-  const location = shared?.settings?.address || read(STORAGE.settings, {}).address || 'Sadad, Homs, Syria';
-  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(SUKKAR_MAP_PIN)}`;
+  const localSettings = read(STORAGE.settings, {});
+  const location = shared?.settings?.address || localSettings.address || 'Sadad, Homs, Syria';
+  const mapLocation = shared?.settings?.mapLocation || localSettings.mapLocation || SUKKAR_MAP_PIN;
+  const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapLocation)}`;
   const homeProducts = products.map((item) => ({ ...item, image: shared?.overrides?.[item.id]?.image || item.image }));
   const reviewItems = shared?.reviews || read(STORAGE.reviews, initialReviews);
   return <main><section className="hero-section" style={{ '--hero-image': `url(${heroImage})` }}><div className="hero-copy"><span className="eyebrow">Handmade in Homs · Made with heart</span><h1>Make a moment<br/>a little <em>sweeter.</em></h1><p>Personalised chocolate and celebration treats, made by hand for the people and days you love.</p><div className="hero-actions"><ButtonLink to="/custom">Dream up a treat</ButtonLink><Link className="button button-outline" to="/gallery">Wander through the gallery <ArrowDown size={15}/></Link></div></div><div className="hero-caption"><span>01 — Little things, lovingly made</span><span>Made to order in Sadad, Homs</span></div></section>
@@ -353,7 +352,7 @@ function Home() {
     <section className="custom-feature"><div className="custom-photo"><img src={homeProducts[20].image} alt="A handmade chocolate gift assortment"/></div><div className="custom-feature-copy"><span className="eyebrow">Your idea, our little workshop</span><h2>Tell us what<br/>you’re <em>imagining.</em></h2><p>Send a description, a reference photo and your collection date. We’ll talk through the details and price together before anything is made.</p><ButtonLink to="/custom">Start a custom order</ButtonLink><span className="small-note">A few words or a full moodboard — either is lovely.</span></div></section>
     <section className="promise-section"><div className="promise-heading"><span className="eyebrow">Good to know</span><h2>A few things before<br/><em>the first bite.</em></h2></div><div className="promise-content"><OrderNote compact/><div className="faq-mini"><h3>What about allergies?</h3><p>Please include any allergies in your request. We’ll confirm the ingredients and whether we can accommodate them before you place your order.</p><Link to="/contact">Ask us a question <ArrowRight size={14}/></Link></div></div></section>
     <section className="reviews-section"><div className="reviews-heading"><span className="eyebrow">A few kind words</span><h2>From our table <em>to yours.</em></h2><Link to="/reviews" className="text-link">Read all reviews <ArrowRight size={15}/></Link></div><ReviewCarousel reviews={reviewItems}/></section>
-    <section className="home-location"><div className="home-location-copy"><span className="eyebrow">Find Sukkar</span><h2>A little sweetness,<br/><em>close to home.</em></h2><p>Visit us in person or open the map for directions to our location.</p><div className="home-location-address"><MapPin size={17}/><span>{location}</span></div><a className="button" href={directionsUrl} target="_blank" rel="noreferrer">Get directions <ArrowRight size={16}/></a></div><div className="home-location-map"><iframe title={`Map showing Sukkar Chocolate at ${location}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(SUKKAR_MAP_PIN)}&z=16&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div></section>
+    <section className="home-location"><div className="home-location-copy"><span className="eyebrow">Find Sukkar</span><h2>A little sweetness,<br/><em>close to home.</em></h2><p>Visit us in person or open the map for directions to our location.</p><div className="home-location-address"><MapPin size={17}/><span>{location}</span></div><a className="button" href={directionsUrl} target="_blank" rel="noreferrer">Get directions <ArrowRight size={16}/></a></div><div className="home-location-map"><iframe title={`Map showing Sukkar Chocolate at ${location}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=16&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div></section>
     </main>;
 }
 
@@ -381,6 +380,7 @@ function Gallery() {
 function Reviews() {
   const shared = usePublicContent();
   const [items, setItems] = useState(()=>read(STORAGE.reviews, initialReviews));
+  const [visibleCount, setVisibleCount] = useState(6);
   useEffect(() => { if (shared?.reviews) setItems(shared.reviews); }, [shared]);
   const [submitted, setSubmitted] = useState(false);
   const [rating, setRating] = useState(0);
@@ -401,7 +401,10 @@ function Reviews() {
       setSubmitted(true); setRating(0); setRatingError(''); form.reset();
     } catch { setSubmitError('We could not submit your review. Please try again.'); }
   };
-  return <main className="inner-page"><PageIntro eyebrow="Notes from our customers" title={<>The sweetest <em>words.</em></>} text="A little note after a special day means the world to us."/><div className="reviews-list">{items.length ? items.map((review)=><article className="review-card" key={review.id}><span className="quote-mark">“</span><ReviewStars rating={review.rating}/><p>{review.quote}</p><span className="review-by">{review.name}</span></article>) : <div className="empty-state">No reviews yet. Be the first to share a little note.</div>}</div><section className="form-panel review-form-panel"><span className="eyebrow">Leave a little note</span><h2>How was your <em>Sukkar?</em></h2><form onSubmit={addReview} className="form-grid"><label>Your name<input name="name" required maxLength="60" placeholder="The name you’d like us to use"/></label><fieldset className="full-field review-rating-field"><legend>Your rating</legend><div className="rating-picker" role="group" aria-label="Choose a star rating">{[1,2,3,4,5].map((stars)=><button key={stars} type="button" className={stars <= rating ? 'rating-star selected' : 'rating-star'} aria-label={`${stars} ${stars===1?'star':'stars'}`} aria-pressed={rating===stars} onClick={()=>{setRating(stars);setRatingError('');}}>{stars <= rating ? '★' : '☆'}</button>)}</div>{ratingError&&<small className="error-message" role="alert">{ratingError}</small>}</fieldset><label className="full-field">Your review<textarea name="review" required maxLength="500" rows="4" placeholder="Tell us what made it special…"/></label><button className="button" type="submit">Share your review <ArrowRight size={16}/></button></form></section>{submitted&&<p className="success-message review-success-outside" role="status">{supabaseReady ? 'Thank you — your review has been sent for approval.' : 'Thank you — your kind words have been added.'}</p>}{submitError&&<p className="error-message review-error-outside" role="alert">{submitError}</p>}</main>;
+  const visibleItems = items.slice(0, visibleCount);
+  const remainingReviews = items.length - visibleItems.length;
+  const nextReviewCount = Math.min(6, remainingReviews);
+  return <main className="inner-page"><PageIntro eyebrow="Notes from our customers" title={<>The sweetest <em>words.</em></>} text="A little note after a special day means the world to us."/><div className="reviews-list" id="customer-reviews">{items.length ? visibleItems.map((review)=><article className="review-card" key={review.id}><span className="quote-mark">“</span><ReviewStars rating={review.rating}/><p>{review.quote}</p><span className="review-by">{review.name}</span></article>) : <div className="empty-state">No reviews yet. Be the first to share a little note.</div>}</div>{visibleCount > 6 || remainingReviews > 0 ? <div className="reviews-load-more">{visibleCount > 6 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount(6)}>Show less</button>}{remainingReviews > 0 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount((count) => count + 6)}>Show {nextReviewCount} more {nextReviewCount === 1 ? 'review' : 'reviews'}</button>}</div> : null}<section className="form-panel review-form-panel"><span className="eyebrow">Leave a little note</span><h2>How was your <em>Sukkar?</em></h2><form onSubmit={addReview} className="form-grid"><label>Your name<input name="name" required maxLength="60" placeholder="The name you’d like us to use"/></label><fieldset className="full-field review-rating-field"><legend>Your rating</legend><div className="rating-picker" role="group" aria-label="Choose a star rating">{[1,2,3,4,5].map((stars)=><button key={stars} type="button" className={stars <= rating ? 'rating-star selected' : 'rating-star'} aria-label={`${stars} ${stars===1?'star':'stars'}`} aria-pressed={rating===stars} onClick={()=>{setRating(stars);setRatingError('');}}>{stars <= rating ? '★' : '☆'}</button>)}</div>{ratingError&&<small className="error-message" role="alert">{ratingError}</small>}</fieldset><label className="full-field">Your review<textarea name="review" required maxLength="500" rows="4" placeholder="Tell us what made it special…"/></label><button className="button" type="submit">Share your review <ArrowRight size={16}/></button></form></section>{submitted&&<p className="success-message review-success-outside" role="status">{supabaseReady ? 'Thank you — your review has been sent for approval.' : 'Thank you — your kind words have been added.'}</p>}{submitError&&<p className="error-message review-error-outside" role="alert">{submitError}</p>}</main>;
 }
 
 function CustomOrder() {
@@ -410,14 +413,40 @@ function CustomOrder() {
   const [customerSession, setCustomerSession] = useState(getCustomerSession);
   useEffect(() => { const syncSession = () => setCustomerSession(getCustomerSession()); window.addEventListener('sukkar-customer-auth', syncSession); return () => window.removeEventListener('sukkar-customer-auth', syncSession); }, []);
   if (!customerSession?.access_token) return <main className="inner-page account-page"><PageIntro eyebrow="Before you order" title={<>Sign in to <em>make it yours.</em></>} text="Please sign in or register before sending a custom order request."/><section className="form-panel account-panel account-gate"><p>{supabaseReady ? 'Your order details will be submitted securely with your account.' : 'Preview mode: create a test account to try the order flow. Preview orders stay in this browser.'}</p><div className="account-gate-actions"><Link className="button" to="/sign-in?next=%2Fcustom">Sign in <ArrowRight size={15}/></Link><Link className="button button-outline" to="/register?next=%2Fcustom">Create account <ArrowRight size={15}/></Link></div></section></main>;
-  const submit = async (event) => { event.preventDefault(); const form = event.currentTarget; const data = new FormData(form); const files = [...form.elements.photos.files]; if (files.length > 5) return; const collectionDate = data.get('date'); if (!collectionDate) { setError('Choose a collection date.'); return; } const preferredPickupTime = data.get('pickupTime'); if (!preferredPickupTime) { setError('Choose your preferred collection time.'); return; } const waWindow=window.open('about:blank','_blank'); setSending(true);setError(''); const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map(file=>file.name), status:'Awaiting details', cost:'', preferredPickupTime, pickupTime:'', createdAt:new Date().toISOString() }; try { const savedOrder = supabaseReady ? await createRemoteOrder(order, files, customerSession) : { ...order, trackingToken: crypto.randomUUID(), photoPaths: [], photoPreviews: await Promise.all(files.map(fileToDataUrl)) }; const saved=read(STORAGE.orders,[]); write(STORAGE.orders,[{...savedOrder,photoNames:order.photoNames},...saved]); const photoMessage = supabaseReady && savedOrder.photoUrls?.length ? `Reference photo links (available for 24 hours):\n${savedOrder.photoUrls.join('\n')}\n` : order.photoNames.length ? `Reference photos: ${order.photoNames.join(', ')} (I’ll attach these in WhatsApp)\n` : '';const message=`Hello Sukkar! I’d love to request a custom order.\n\nOrder reference: ${order.id}\nFirst name: ${order.firstName}\nLast name: ${order.lastName}\nFull name: ${order.name}\nPhone: ${order.phone}\nEmail: ${order.email}\nCollection date: ${formatDate(order.date)}\nPreferred collection time: ${formatCollectionTime(order.preferredPickupTime)}\n${order.allergies && order.allergies !== 'No'?`Allergies or dietary notes: ${order.allergies}\n`:order.allergies === 'No'?'Allergies or dietary notes: No\n':''}What I have in mind: ${order.description}\n${photoMessage}\nPlease let me know the price before you begin. Thank you!`;const whatsappUrl=whatsapp(message);setDone({...order,whatsappUrl});if(waWindow)waWindow.location.href=whatsappUrl;form.reset();setHasAllergies('no'); } catch (cause) { if(waWindow)waWindow.close();setError(cause.message || 'We could not save your request. Please try again.'); } finally { setSending(false); } };
-  return <main className="inner-page order-page"><PageIntro eyebrow="A treat that starts with your idea" title={<>Let’s make it <em>yours.</em></>} text="Tell us what you’re picturing and when you’d like to collect it. You can add up to five reference photos."/><div className="order-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid"><label>First name<input name="firstName" required autoComplete="given-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ')[0] || ''} placeholder="Your first name"/></label><label>Last name<input name="lastName" required autoComplete="family-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''} placeholder="Your last name"/></label><PhoneNumberField/><label>Email address<input name="email" type="email" required autoComplete="email" defaultValue={customerSession.user?.email || ''} placeholder="you@example.com"/></label><div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div><div className="time-field-label"><span>Preferred collection time</span><PreferredTimeWheelPicker name="pickupTime"/><small className="time-field-note">Choose a time between 10:00 AM and 10:00 PM.</small></div><label className="full-field">Describe your idea<textarea name="description" required minLength="10" maxLength="1500" rows="5" placeholder="Chocolate and filling, colours, message, size or occasion — share anything that helps us imagine it…"/></label><fieldset className="full-field allergy-field"><legend>Any allergies or dietary requirements?</legend><select name="hasAllergies" value={hasAllergies} onChange={(event) => setHasAllergies(event.target.value)}><option value="no">No</option><option value="yes">Yes</option></select>{hasAllergies === 'yes' && <label className="allergy-details">Please tell us about any allergies or dietary requirements<input name="allergies" required placeholder="e.g. nuts, dairy, gluten"/></label>}</fieldset><label className="full-field upload-field">Reference photos <span className="optional">(up to 5)</span><input name="photos" type="file" accept="image/*" multiple onChange={(event)=>{if(event.target.files.length>5) event.target.setCustomValidity('Please choose up to 5 photos.'); else event.target.setCustomValidity('');}}/><small>{supabaseReady ? 'Photos are uploaded privately with your request.' : 'Preview photos stay on this device and are not uploaded.'}</small></label><button className="button" type="submit" disabled={sending}>{sending?'Sending request…':'Send order request'} <ArrowRight size={16}/></button><p className="form-footnote">{supabaseReady ? 'Your request and photos are saved securely with your account. WhatsApp opens so we can agree the price before we start.' : 'Preview order saved only in this browser. WhatsApp opens so we can try the request flow.'}</p></form>{error&&<p className="error-message">{error}</p>}{done&&<div className="success-card"><span>✓</span><div><strong>Your request was saved — thank you!</strong><p>Reference <b>{done.id}</b>. We’ve opened WhatsApp so you can discuss your order.</p><a className="success-whatsapp" href={done.whatsappUrl} target="_blank" rel="noreferrer">Continue to WhatsApp <ArrowRight size={15}/></a><Link to="/my-orders">View my order <ArrowRight size={15}/></Link></div></div>}</section><aside className="order-aside"><OrderNote/><div className="aside-steps"><span className="eyebrow">A lovely little process</span><ol><li><span>01</span><div><strong>Tell us what you love</strong><p>Share your idea, date and inspiration.</p></div></li><li><span>02</span><div><strong>Agree the details</strong><p>We’ll confirm the price together over WhatsApp.</p></div></li><li><span>03</span><div><strong>Collect and enjoy</strong><p>Pay when you collect your finished order.</p></div></li></ol></div></aside></div></main>;
+  const submit = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const files = [...form.elements.photos.files];
+    if (files.length > 5) return;
+    const collectionDate = data.get('date');
+    if (!collectionDate) { setError('Choose a collection date.'); return; }
+    const preferredPickupTime = data.get('pickupTime');
+    if (!preferredPickupTime) { setError('Choose your preferred collection time.'); return; }
+    setSending(true);
+    setError('');
+    const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map(file=>file.name), status:'Awaiting details', cost:'', preferredPickupTime, pickupTime:'', createdAt:new Date().toISOString() };
+    try {
+      const savedOrder = supabaseReady ? await createRemoteOrder(order, files, customerSession) : { ...order, trackingToken: crypto.randomUUID(), photoPaths: [], photoPreviews: await Promise.all(files.map(fileToDataUrl)) };
+      const saved=read(STORAGE.orders,[]);
+      write(STORAGE.orders,[{...savedOrder,photoNames:order.photoNames},...saved]);
+      let emailError = '';
+      try { await sendSiteEmail('order_submitted', { orderId: order.id }, customerSession); }
+      catch (cause) { emailError = cause.message || 'We could not email Sukkar. Please contact us using the email address on the site.'; }
+      setDone({ ...order, emailError });
+      form.reset();
+      setHasAllergies('no');
+    } catch (cause) {
+      setError(cause.message || 'We could not save your request. Please try again.');
+    } finally { setSending(false); }
+  };
+  return <main className="inner-page order-page"><PageIntro eyebrow="A treat that starts with your idea" title={<>Let’s make it <em>yours.</em></>} text="Tell us what you’re picturing and when you’d like to collect it. You can add up to five reference photos."/><div className="order-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid"><label>First name<input name="firstName" required autoComplete="given-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ')[0] || ''} placeholder="Your first name"/></label><label>Last name<input name="lastName" required autoComplete="family-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''} placeholder="Your last name"/></label><PhoneNumberField/><label>Email address<input name="email" type="email" required autoComplete="email" defaultValue={customerSession.user?.email || ''} placeholder="you@example.com"/></label><div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div><div className="time-field-label"><span>Preferred collection time</span><PreferredTimeWheelPicker name="pickupTime"/><small className="time-field-note">Choose a time between 10:00 AM and 10:00 PM.</small></div><label className="full-field">Describe your idea<textarea name="description" required minLength="10" maxLength="1500" rows="5" placeholder="Chocolate and filling, colours, message, size or occasion — share anything that helps us imagine it…"/></label><fieldset className="full-field allergy-field"><legend>Any allergies or dietary requirements?</legend><select name="hasAllergies" value={hasAllergies} onChange={(event) => setHasAllergies(event.target.value)}><option value="no">No</option><option value="yes">Yes</option></select>{hasAllergies === 'yes' && <label className="allergy-details">Please tell us about any allergies or dietary requirements<input name="allergies" required placeholder="e.g. nuts, dairy, gluten"/></label>}</fieldset><label className="full-field upload-field">Reference photos <span className="optional">(up to 5)</span><input name="photos" type="file" accept="image/*" multiple onChange={(event)=>{if(event.target.files.length>5) event.target.setCustomValidity('Please choose up to 5 photos.'); else event.target.setCustomValidity('');}}/><small>{supabaseReady ? 'Photos are uploaded privately with your request.' : 'Preview photos stay on this device and are not uploaded.'}</small></label><button className="button" type="submit" disabled={sending}>{sending?'Sending request…':'Send order request'} <ArrowRight size={16}/></button><p className="form-footnote">{supabaseReady ? 'Your request and photos are saved securely. You’ll receive an email and Sukkar will email you about the price before starting.' : 'Preview order saved only in this browser. Email sending requires the connected website setup.'}</p></form>{error&&<p className="error-message">{error}</p>}{done&&<div className="success-card"><span>✓</span><div><strong>Your request was saved — thank you!</strong><p>Reference <b>{done.id}</b>. {done.emailError ? 'The order is saved, but its email could not be sent.' : 'A confirmation email has been sent to you, and Sukkar has received your request.'}</p>{done.emailError&&<p className="error-message" role="alert">{done.emailError}</p>}<Link to="/my-orders">View my order <ArrowRight size={15}/></Link></div></div>}</section><aside className="order-aside"><OrderNote/><div className="aside-steps"><span className="eyebrow">A lovely little process</span><ol><li><span>01</span><div><strong>Tell us what you love</strong><p>Share your idea, date and inspiration.</p></div></li><li><span>02</span><div><strong>Agree the details</strong><p>We’ll confirm the price together by email.</p></div></li><li><span>03</span><div><strong>Collect and enjoy</strong><p>Pay when you collect your finished order.</p></div></li></ol></div></aside></div></main>;
 }
 
 function Contact() {
-  const shared=usePublicContent(); const settings=shared?.settings || read(STORAGE.settings,{}); const [sent,setSent]=useState(false);
-  const submit=(event)=>{event.preventDefault();const d=new FormData(event.currentTarget);window.open(whatsapp(`Hello Sukkar!\n\nName: ${d.get('name')}\nPhone: ${readPhone(d)}\nMessage: ${d.get('message')}`),'_blank','noopener,noreferrer');setSent(true);event.currentTarget.reset();};
-  return <main className="inner-page contact-page"><PageIntro eyebrow="We’re happy you’re here" title={<>Let’s have a <em>chat.</em></>} text="Questions, a special request or a little chocolate curiosity? Send us a note."/><div className="contact-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid"><label>Your name<input name="name" required placeholder="Your name"/></label><PhoneNumberField/><label className="full-field">Your message<textarea name="message" rows="5" required placeholder="How can we help?"/></label><button className="button" type="submit">Send via WhatsApp <ArrowRight size={16}/></button><small className="full-field">WhatsApp will open with your message ready to send.</small></form>{sent&&<p className="success-message">Your message is ready in WhatsApp. We look forward to chatting.</p>}</section><aside className="contact-details"><span className="eyebrow">Find Sukkar</span><h2>Let’s make<br/><em>something sweet.</em></h2><p><Phone size={17}/>{settings.phone||'+963 982 769 168'}</p><p><MapPin size={17}/>{settings.address||'Sadad, Homs, Syria'}</p><a href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={17}/>Follow along on Instagram</a><a href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={17}/>Find us on Facebook</a><div className="contact-hours">Orders are made by request. Please allow at least 3 days before collection.</div></aside></div></main>;
+  const shared=usePublicContent(); const settings=shared?.settings || read(STORAGE.settings,{}); const [sent,setSent]=useState(false); const [error,setError]=useState(''); const [sending,setSending]=useState(false);
+  const submit=async(event)=>{event.preventDefault();const form=event.currentTarget;const d=new FormData(form);setSending(true);setError('');setSent(false);try{await sendSiteEmail('contact',{name:d.get('name'),email:d.get('email'),message:d.get('message'),website:d.get('website')});setSent(true);form.reset();}catch(cause){setError(cause.message||'We could not send your email. Please try again.');}finally{setSending(false);}};
+  return <main className="inner-page contact-page"><PageIntro eyebrow="We’re happy you’re here" title={<>Let’s have a <em>chat.</em></>} text="Questions, a special request or a little chocolate curiosity? Send us a note."/><div className="contact-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid"><label>Your name<input name="name" required maxLength="100" placeholder="Your name"/></label><label>Email address<input name="email" type="email" required maxLength="254" placeholder="you@example.com"/></label><label className="full-field">Your message<textarea name="message" rows="5" required maxLength="4000" placeholder="How can we help?"/></label><label className="email-honeypot" aria-hidden="true">Website<input name="website" tabIndex="-1" autoComplete="off"/></label><button className="button" type="submit" disabled={sending}>{sending?'Sending email…':'Send email'} <ArrowRight size={16}/></button><small className="full-field">Your message will be sent to Sukkar by email.</small></form>{sent&&<p className="success-message" role="status">Your email has been sent. We look forward to chatting.</p>}{error&&<p className="error-message" role="alert">{error}</p>}</section><aside className="contact-details"><span className="eyebrow">Find Sukkar</span><h2>Let’s make<br/><em>something sweet.</em></h2>{settings.email&&<a href={`mailto:${settings.email}`}><Mail size={17}/>{settings.email}</a>}<p><MapPin size={17}/>{settings.address||'Sadad, Homs, Syria'}</p><a href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={17}/>Follow along on Instagram</a><a href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={17}/>Find us on Facebook</a><div className="contact-hours">Orders are made by request. Please allow at least 3 days before collection.</div></aside></div></main>;
 }
 
 function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
@@ -452,6 +481,8 @@ function MyOrders() {
   const [orders,setOrders]=useState(()=>normalizeOrderTimes(read(STORAGE.orders,[])));
   const [respondingOrder,setRespondingOrder]=useState(null);
   const [responseError,setResponseError]=useState('');
+  const [questionOrder,setQuestionOrder]=useState(null);
+  const [questionMessage,setQuestionMessage]=useState('');
   useEffect(()=>{
     let active = true;
     let refreshing = false;
@@ -498,13 +529,21 @@ function MyOrders() {
       const next = orders.map((item) => item.id === order.id ? { ...item, status: accept ? 'Preparing' : 'Price declined' } : item);
       setOrders(next);
       write(STORAGE.orders, next);
+      try { await sendSiteEmail('customer_price_response', { orderId: order.id, accepted: accept }, getCustomerSession()); }
+      catch (cause) { setResponseError(`Your response was saved, but Sukkar could not be emailed: ${cause.message || 'please try again later.'}`); }
     } catch (cause) {
       setResponseError(cause.message || 'Could not save your response. Please try again.');
     } finally {
       setRespondingOrder(null);
     }
   };
-  return <main className="inner-page"><PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady?'Orders submitted on this browser will appear here, with updates from Sukkar.':'Orders submitted on this browser will appear here. We’ll agree the price and details together over WhatsApp.'}/>{responseError&&<p className="error-message">{responseError}</p>}<div className="my-orders">{orders.length?orders.map(order=><article className="order-card" key={order.id}><div className="order-card-top"><span className="eyebrow">{order.id}</span></div><h2>Made for {order.name}</h2><p>{order.description}</p><div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status==='Awaiting price agreement'||order.status==='Accepted'?'Proposed price':'Agreed price'}<strong>{order.cost?formatPrice(order.cost):'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div><OrderStatusJourney status={order.status}/>{order.status==='Awaiting price agreement'&&<div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,false)}>Reject price</button></div></div>}{order.status==='Price declined'&&<p className="price-response-note">You declined this price. Sukkar will review your order.</p>}<a className="text-link" target="_blank" rel="noreferrer" href={whatsapp(`Hello Sukkar, I’m checking on order ${order.id}.`)}>Ask about this order <ArrowRight size={15}/></a></article>):<div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}</div></main>;
+  const askAboutOrder = async (order) => {
+    setQuestionOrder(order.id); setQuestionMessage(''); setResponseError('');
+    try { await sendSiteEmail('order_question', { orderId: order.id }, getCustomerSession()); setQuestionMessage(`Your question about ${order.id} was emailed to Sukkar.`); }
+    catch (cause) { setResponseError(cause.message || 'We could not email Sukkar. Please try again.'); }
+    finally { setQuestionOrder(null); }
+  };
+  return <main className="inner-page"><PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady?'Orders submitted on this browser will appear here, with updates from Sukkar.':'Orders submitted on this browser will appear here. We’ll agree the price and details together by email.'}/>{responseError&&<p className="error-message" role="alert">{responseError}</p>}{questionMessage&&<p className="success-message" role="status">{questionMessage}</p>}<div className="my-orders">{orders.length?orders.map(order=><article className="order-card" id={`order-${order.id}`} key={order.id}><div className="order-card-top"><span className="eyebrow">{order.id}</span></div><h2>Made for {order.name}</h2><p>{order.description}</p><div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status==='Awaiting price agreement'||order.status==='Accepted'?'Proposed price':'Agreed price'}<strong>{order.cost?formatPrice(order.cost):'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div><OrderStatusJourney status={order.status}/>{order.status==='Awaiting price agreement'&&<div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,false)}>Reject price</button></div></div>}{order.status==='Price declined'&&<p className="price-response-note">You declined this price. Sukkar will review your order.</p>}<button className="text-link" type="button" disabled={questionOrder===order.id} onClick={()=>askAboutOrder(order)}>{questionOrder===order.id?'Sending email…':'Ask about this order'} <ArrowRight size={15}/></button></article>):<div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}</div></main>;
 }
 
 function Admin() {
@@ -513,9 +552,15 @@ function Admin() {
   const [orders, setOrders] = useState(() => normalizeOrderTimes(read(STORAGE.orders, [])));
   const [settings, setSettings] = useState(() => read(STORAGE.settings, {}));
   const [saved, setSaved] = useState(false);
+  const [accountEmailMessage, setAccountEmailMessage] = useState('');
+  const [accountEmailError, setAccountEmailError] = useState('');
+  const [accountPasswordMessage, setAccountPasswordMessage] = useState('');
+  const [accountPasswordError, setAccountPasswordError] = useState('');
+  const [accountSaving, setAccountSaving] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [loading, setLoading] = useState(false);
   const [adminReviews, setAdminReviews] = useState([]);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [categoryList, setCategoryList] = useState(() => read('sukkar-categories', categories));
   const [extraPhotos, setExtraPhotos] = useState(() => read(STORAGE.photos, []));
   const [photoCategories, setPhotoCategories] = useState(() => read('sukkar-photo-categories', {}));
@@ -527,7 +572,7 @@ function Admin() {
   const galleryCategories = categoryList.filter((item) => item !== 'All treats');
   const activeGalleryCategory = galleryCategories.includes(selectedGalleryCategory) ? selectedGalleryCategory : (galleryCategories[0] || 'Chocolate');
   const galleryItems = [...products, ...extraPhotos]
-    .map((item) => ({ ...item, name: shared?.overrides?.[item.id]?.name ?? galleryPhotoNames[item.id] ?? item.name, category: shared?.overrides?.[item.id]?.category || photoCategories[item.id] || item.category, description: shared?.overrides?.[item.id]?.description ?? photoDescriptions[item.id] ?? item.description, image: shared?.overrides?.[item.id]?.image || item.image, isVisible: photoVisibility[item.id] ?? shared?.overrides?.[item.id]?.is_visible ?? !removedPhotoIds.includes(item.id) }))
+    .map((item) => ({ ...item, name: shared?.overrides?.[item.id]?.name ?? galleryPhotoNames[item.id] ?? item.name, category: photoCategories[item.id] || shared?.overrides?.[item.id]?.category || item.category, description: shared?.overrides?.[item.id]?.description ?? photoDescriptions[item.id] ?? item.description, image: shared?.overrides?.[item.id]?.image || item.image, isVisible: photoVisibility[item.id] ?? shared?.overrides?.[item.id]?.is_visible ?? !removedPhotoIds.includes(item.id) }))
     .concat((shared?.gallery || []).filter((remote) => !extraPhotos.some((photo) => photo.id === remote.id)))
     ;
 
@@ -581,45 +626,40 @@ function Admin() {
   };
 
   const rejectOrder = async (order) => {
-    const messageWindow = window.open('about:blank', '_blank');
     try {
       if (supabaseReady && session) await updateRemoteOrder(order.id, { status: 'Rejected' }, session);
       update(order.id, 'status', 'Rejected');
-      if (messageWindow) messageWindow.location.href = whatsappTo(order.phone, `Hello ${order.name}, thank you for your Sukkar order request ${order.id}. We’re sorry, but we can’t accept this request. Please contact us if you’d like to discuss another date or idea.`);
-    } catch {
-      if (messageWindow) messageWindow.close();
-      setLoginError('Could not reject the order. Please try again.');
+      try { await sendSiteEmail('admin_order_rejected', { orderId: order.id }, session); }
+      catch (cause) { setLoginError(`Order rejected, but the customer email could not be sent: ${cause.message || 'please try again.'}`); }
+    } catch (cause) {
+      setLoginError(cause.message || 'Could not reject the order. Please try again.');
     }
   };
 
   const markReady = async (order) => {
     const collectionTime = normalizeTimeValue(order.pickupTime);
     if (!order.cost || !collectionTime) return;
-    const messageWindow = window.open('about:blank', '_blank');
     try {
       if (supabaseReady && session) await updateRemoteOrder(order.id, { status: 'Ready for collection', pickupTime: collectionTime }, session);
       const next = orders.map((item) => item.id === order.id ? { ...item, pickupTime: collectionTime, status: 'Ready for collection' } : item);
       setOrders(next);
       if (!supabaseReady) write(STORAGE.orders, next);
-      const messageUrl = whatsappTo(order.phone, `Hello ${order.name}, your Sukkar order ${order.id} is ready for collection on ${formatDate(order.date)} at ${formatCollectionTime(collectionTime)}. The agreed total is ${formatPrice(order.cost)}. We look forward to seeing you!`);
-      if (messageWindow) messageWindow.location.href = messageUrl;
-    } catch {
-      if (messageWindow) messageWindow.close();
-      setLoginError('Could not update the order. Please try again.');
+      try { await sendSiteEmail('admin_ready_collection', { orderId: order.id }, session); }
+      catch (cause) { setLoginError(`Order updated, but the customer email could not be sent: ${cause.message || 'please try again.'}`); }
+    } catch (cause) {
+      setLoginError(cause.message || 'Could not update the order. Please try again.');
     }
   };
 
   const sendPriceProposal = async (order) => {
     if (!order.cost) return;
-    const messageWindow = window.open('about:blank', '_blank');
     try {
       if (supabaseReady && session) await updateRemoteOrder(order.id, { cost: order.cost, status: 'Awaiting price agreement' }, session);
       update(order.id, 'status', 'Awaiting price agreement');
-      const messageUrl = whatsappTo(order.phone, `Hello ${order.name}, good news — we’ve accepted your Sukkar order ${order.id}. The proposed price is ${formatPrice(order.cost)}. Please sign in to My orders to accept or reject the price. Thank you!`);
-      if (messageWindow) messageWindow.location.href = messageUrl;
-    } catch {
-      if (messageWindow) messageWindow.close();
-      setLoginError('Could not send the price proposal. Please try again.');
+      try { await sendSiteEmail('admin_price_proposal', { orderId: order.id }, session); }
+      catch (cause) { setLoginError(`Price proposal saved, but the customer email could not be sent: ${cause.message || 'please try again.'}`); }
+    } catch (cause) {
+      setLoginError(cause.message || 'Could not save the price proposal. Please try again.');
     }
   };
 
@@ -639,13 +679,47 @@ function Admin() {
   const saveSettings = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const next = { phone: data.get('phone'), address: data.get('address') };
+    const next = { phone: data.get('phone'), email: data.get('email').trim(), address: data.get('address').trim(), mapLocation: data.get('mapLocation').trim() || SUKKAR_MAP_PIN };
     try {
       if (supabaseReady && session) await saveRemoteSettings(next, session);
       write(STORAGE.settings, next);
       setSettings(next);
       setSaved(true);
     } catch { setLoginError('Could not save site details. Please try again.'); }
+  };
+
+  const saveAdminEmail = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const email = new FormData(form).get('adminEmail').trim();
+    setAccountEmailError(''); setAccountEmailMessage(''); setAccountSaving(true);
+    if (email.toLowerCase() === String(session.user?.email || '').toLowerCase()) { setAccountEmailError('Enter a different email address.'); setAccountSaving(false); return; }
+    try {
+      await updateAdminEmail(email, session);
+      setAccountEmailMessage('Email change requested. Check your current and new email inboxes for Supabase confirmation links.');
+      form.reset();
+    } catch (cause) {
+      const message = cause.message || '';
+      setAccountEmailError(/already (been )?registered|email_exists/i.test(message)
+        ? 'That email is already registered to another account. Your admin email has not changed; choose an unused email address.'
+        : message || 'Could not change the admin email. Please try again.');
+    }
+    finally { setAccountSaving(false); }
+  };
+
+  const saveAdminPassword = async (event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const password = data.get('newPassword');
+    if (password !== data.get('confirmPassword')) { setAccountPasswordError('The passwords do not match.'); setAccountPasswordMessage(''); return; }
+    setAccountPasswordError(''); setAccountPasswordMessage(''); setAccountSaving(true);
+    try {
+      await updateAdminPassword(password, session);
+      setAccountPasswordMessage('Your admin password has been changed.');
+      form.reset();
+    } catch (cause) { setAccountPasswordError(cause.message || 'Could not change the admin password. Please try again.'); }
+    finally { setAccountSaving(false); }
   };
 
   const addCategory = async (event) => {
@@ -663,12 +737,26 @@ function Admin() {
   };
 
   const deleteCategory = async (name) => {
-    try { if (supabaseReady && session) await deleteRemoteCategory(name, session); }
+    if (name === 'Chocolate' || name === 'All treats') return;
+    const affectedItems = galleryItems.filter((item) => item.category === name);
+    try {
+      if (supabaseReady && session) {
+        await Promise.all(affectedItems.filter((item) => products.some((product) => product.id === item.id)).map((item) => saveRemoteProductOverride({ ...item, category: 'Chocolate' }, session)));
+        await deleteRemoteCategory(name, session);
+      }
+    }
     catch { setLoginError('Could not remove that category. Please try again.'); return; }
     const next = categoryList.filter((item) => item !== name);
     setCategoryList(next);
     write('sukkar-categories', next);
-    if (name === selectedGalleryCategory) setSelectedGalleryCategory(next.find((item) => item !== 'All treats') || 'Chocolate');
+    const nextPhotoCategories = { ...photoCategories };
+    for (const item of affectedItems) nextPhotoCategories[item.id] = 'Chocolate';
+    setPhotoCategories(nextPhotoCategories);
+    write('sukkar-photo-categories', nextPhotoCategories);
+    const nextExtraPhotos = extraPhotos.map((item) => item.category === name ? { ...item, category: 'Chocolate' } : item);
+    setExtraPhotos(nextExtraPhotos);
+    write(STORAGE.photos, nextExtraPhotos);
+    setSelectedGalleryCategory('Chocolate');
   };
 
   const addPhotos = async (event) => {
@@ -784,6 +872,9 @@ function Admin() {
     } catch { setLoginError('Could not delete that review. Please try again.'); }
   };
 
+  const newReviews = adminReviews.filter((review) => !review.isPublished);
+  const visibleReviews = showAllReviews ? adminReviews : newReviews;
+
   const login = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -838,18 +929,18 @@ function Admin() {
                 </div>
                 <div className="admin-order-actions">
                   {order.status === 'Awaiting details' && <>
-                    <button className="button" onClick={() => acceptOrder(order)}>Accept order <MessageCircle size={15} /></button>
+                    <button className="button" onClick={() => acceptOrder(order)}>Accept order <ArrowRight size={15} /></button>
                     <button className="collected-button" onClick={() => rejectOrder(order)}>Reject order</button>
                   </>}
                   {(order.status === 'Accepted' || order.status === 'Price declined') && <>
                     <label>Price to agree<div className="price-input-wrap"><input value={String(order.cost || '').replace(/\s*SYP$/i, '')} onChange={(event) => update(order.id, 'cost', event.target.value)} onBlur={(event) => update(order.id, 'cost', event.target.value, true)} placeholder="e.g. 25,000" /><span>SYP</span></div></label>
-                    <button className="button" disabled={!order.cost} onClick={() => sendPriceProposal(order)}>Send price proposal <MessageCircle size={15} /></button>
+                    <button className="button" disabled={!order.cost} onClick={() => sendPriceProposal(order)}>Email price proposal <Mail size={15} /></button>
                     {order.status === 'Price declined' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Delete declined order <X size={14} /></button>}
                   </>}
                   {order.status === 'Awaiting price agreement' && <p className="admin-price-waiting">Waiting for customer response to <strong>{formatPrice(order.cost)}</strong>.</p>}
                   {order.status === 'Preparing' && <>
                     <div className="collection-time-field"><span>Collection time to send</span><PreferredTimeWheelPicker value={order.pickupTime} label="collection time" onChange={(value) => update(order.id, 'pickupTime', value)} /></div>
-                    <button className="button" disabled={!normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — send time <MessageCircle size={15} /></button>
+                    <button className="button" disabled={!normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
                   </>}
                   {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
                   {order.status === 'Rejected' && <button className="collected-button" onClick={() => markCollected(order.id)}>Remove declined order <X size={14} /></button>}
@@ -858,23 +949,45 @@ function Admin() {
             )) : <div className="empty-state">New customer requests will appear here.</div>}
           </section>
           <section className="admin-section">
-            <div><span className="eyebrow">Customer notes</span><h2>Reviews <span>{adminReviews.length}</span></h2><p>New customer reviews stay hidden until you approve them.</p></div>
+            <div className="admin-section-title"><div><span className="eyebrow">Customer notes</span><h2>{showAllReviews ? 'All reviews' : 'New reviews'} <span>{visibleReviews.length}</span></h2><p>{showAllReviews ? 'Review every submission and hide published reviews from the customer page when needed.' : 'New customer reviews stay hidden until you approve them.'}</p></div>{adminReviews.length > 0 && <button className="text-link" type="button" aria-expanded={showAllReviews} onClick={() => setShowAllReviews((visible) => !visible)}>{showAllReviews ? 'Hide all reviews' : 'Show all reviews'} <ArrowRight size={15}/></button>}</div>
             <div className="reviews-list">
-              {adminReviews.length ? adminReviews.map((review) => <article className="review-card" key={review.id}><ReviewStars rating={review.rating}/><p>{review.quote}</p><span className="review-by">{review.name} · {review.isPublished ? 'Published' : 'Pending approval'}</span><div className="account-gate-actions">{!review.isPublished && <button className="button" type="button" onClick={() => moderateReview(review, true)}>Publish review</button>}<button className="collected-button" type="button" onClick={() => removeReview(review)}>Delete review</button></div></article>) : <p className="empty-state">No customer reviews have been submitted yet.</p>}
+              {visibleReviews.length ? visibleReviews.map((review) => <article className="review-card" key={review.id}><ReviewStars rating={review.rating}/><p>{review.quote}</p><span className="review-by">{review.name} · {review.isPublished ? 'Published' : 'Pending approval'}</span><div className="review-actions">{!review.isPublished && <button className="button" type="button" onClick={() => moderateReview(review, true)}>Publish review</button>}{review.isPublished && <button className="collected-button" type="button" onClick={() => moderateReview(review, false)}>Hide review</button>}<button className="collected-button" type="button" onClick={() => removeReview(review)}>Delete review</button></div></article>) : <p className="empty-state">{adminReviews.length ? 'No new reviews. Show all reviews to manage published ones.' : 'No customer reviews have been submitted yet.'}</p>}
             </div>
           </section>
+          {supabaseReady && session && <section className="admin-section admin-settings">
+            <div><span className="eyebrow">Account security</span><h2>Admin sign-in details</h2><p>Change the email or password you use to sign in to the dashboard. Email changes need confirmation from Supabase.</p></div>
+            <div className="admin-account-forms">
+              <form onSubmit={saveAdminEmail} className="form-grid">
+                <label className="full-field">Current email<input type="email" value={session.user?.email || ''} readOnly /></label>
+                <label className="full-field">New email address<input name="adminEmail" type="email" required autoComplete="email" placeholder="new@example.com" /></label>
+                <button className="button" type="submit" disabled={accountSaving}>{accountSaving ? 'Saving…' : 'Change email'} <ArrowRight size={15} /></button>
+                {accountEmailMessage && <p className="success-message full-field" role="status">{accountEmailMessage}</p>}
+                {accountEmailError && <p className="error-message full-field" role="alert">{accountEmailError}</p>}
+              </form>
+              <form onSubmit={saveAdminPassword} className="form-grid">
+                <label className="full-field">New password<PasswordInput id="admin-new-password" name="newPassword" required minLength="8" autoComplete="new-password" placeholder="At least 8 characters" /></label>
+                <label className="full-field">Confirm new password<PasswordInput id="admin-confirm-password" name="confirmPassword" required minLength="8" autoComplete="new-password" placeholder="Enter the new password again" /></label>
+                <button className="button" type="submit" disabled={accountSaving}>{accountSaving ? 'Saving…' : 'Change password'} <ArrowRight size={15} /></button>
+                {accountPasswordMessage && <p className="success-message full-field" role="status">{accountPasswordMessage}</p>}
+                {accountPasswordError && <p className="error-message full-field" role="alert">{accountPasswordError}</p>}
+              </form>
+            </div>
+          </section>}
           <section className="admin-section admin-settings">
-            <div><span className="eyebrow">Public details</span><h2>Keep in touch</h2><p>Update the phone number and collection location shown on the site.</p></div>
-            <form key={shared ? 'shared-settings-loaded' : 'settings-loading'} onSubmit={saveSettings} className="form-grid">
-              <label>WhatsApp / phone<input name="phone" defaultValue={settings.phone || '+963 982 769 168'} /></label>
+            <div><span className="eyebrow">Public details</span><h2>Keep in touch</h2><p>Update the contact details and collection location shown on the site. The map location controls the home page pin and directions. Order and contact messages are sent to the email address.</p></div>
+            <form key={shared ? JSON.stringify(settings) : 'settings-loading'} onSubmit={saveSettings} className="form-grid">
+              <label>Sukkar email<input name="email" type="email" required defaultValue={settings.email || ''} placeholder="hello@example.com" /></label>
+              <label>Phone number<input name="phone" defaultValue={settings.phone || '+963 982 769 168'} /></label>
               <label>Address<input name="address" defaultValue={settings.address || 'Sadad, Homs, Syria'} /></label>
+              <label>Map location (address or coordinates)<input name="mapLocation" required defaultValue={settings.mapLocation || SUKKAR_MAP_PIN} placeholder="e.g. 34.314331, 36.924356" /></label>
+              <small className="full-field">Enter a full address or coordinates from Google Maps. This updates the map pin and directions button on the home page.</small>
               <button className="button">Save details <ArrowRight size={15} /></button>
               {saved && <span className="success-message">{supabaseReady ? 'Saved to the shared site.' : 'Saved on this device.'}</span>}
             </form>
           </section>
           <section className="admin-section admin-settings">
             <div><span className="eyebrow">Gallery collections</span><h2>Categories</h2>
-              <div className="category-admin">{categoryList.map((category) => <span key={category}>{category}{category !== 'All treats' && <button aria-label={`Remove ${category}`} onClick={() => deleteCategory(category)}><X size={13} /></button>}</span>)}</div>
+              <div className="category-admin">{categoryList.map((category) => <span key={category}>{category}{category !== 'All treats' && category !== 'Chocolate' && <button aria-label={`Remove ${category}`} onClick={() => deleteCategory(category)}><X size={13} /></button>}</span>)}</div>
             </div>
             <form className="category-add" onSubmit={addCategory}>
               <label>Add a category<input name="category" required maxLength="40" placeholder="e.g. Graduation" /></label>
@@ -915,7 +1028,7 @@ function Admin() {
   );
 }
 function App() {
-  return <BrowserRouter><ScrollToTop/><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/about" element={<About/>}/><Route path="/gallery" element={<Gallery/>}/><Route path="/reviews" element={<Reviews/>}/><Route path="/custom" element={<CustomOrder/>}/><Route path="/contact" element={<Contact/>}/><Route path="/my-orders" element={<MyOrders/>}/><Route path="/sign-in" element={<CustomerAuth/>}/><Route path="/register" element={<CustomerAuth register/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes><Footer/><Link className="floating-order" to="/custom"><Heart size={15} fill="currentColor"/> Make it yours</Link></BrowserRouter>;
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><ScrollToTop/><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/about" element={<About/>}/><Route path="/gallery" element={<Gallery/>}/><Route path="/reviews" element={<Reviews/>}/><Route path="/custom" element={<CustomOrder/>}/><Route path="/contact" element={<Contact/>}/><Route path="/my-orders" element={<MyOrders/>}/><Route path="/sign-in" element={<CustomerAuth/>}/><Route path="/register" element={<CustomerAuth register/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes><Footer/><Link className="floating-order" to="/custom"><Heart size={15} fill="currentColor"/> Make it yours</Link></BrowserRouter>;
 }
 
 export default App;

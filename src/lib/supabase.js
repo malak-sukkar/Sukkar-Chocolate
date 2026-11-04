@@ -28,8 +28,31 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const data = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.message || data?.msg || 'The request could not be completed.');
+  if (!response.ok) throw new Error(data?.message || data?.msg || data?.error || 'The request could not be completed.');
   return data;
+}
+
+export async function sendSiteEmail(type, payload = {}, session) {
+  if (!supabaseReady) throw new Error('Email sending needs the connected Sukkar website account.');
+  let token;
+  if (session) {
+    const isAdminSession = session.user?.app_metadata?.role === 'admin';
+    const fresh = isAdminSession ? await freshSession(session) : await freshCustomerSession(session);
+    token = fresh?.access_token;
+  }
+  return request('/functions/v1/send-site-email', { method: 'POST', body: { type, ...payload }, token });
+}
+
+export async function updateAdminEmail(email, session) {
+  session = await freshSession(session);
+  if (!session?.access_token) throw new Error('Please sign in again before changing your email.');
+  return request('/auth/v1/user', { method: 'PUT', body: { email }, token: session.access_token });
+}
+
+export async function updateAdminPassword(password, session) {
+  session = await freshSession(session);
+  if (!session?.access_token) throw new Error('Please sign in again before changing your password.');
+  return request('/auth/v1/user', { method: 'PUT', body: { password }, token: session.access_token });
 }
 
 export async function signInAdmin(email, password) {
@@ -97,7 +120,7 @@ export async function createRemoteOrder(order, files, customerSession) {
     const response = await fetch(`${url}/storage/v1/object/order-reference-photos/${objectPath.split('/').map(encodeURIComponent).join('/')}`, {
       method: 'POST', headers: { apikey: publishableKey, Authorization: `Bearer ${customerSession.access_token}`, 'Content-Type': file.type, 'x-upsert': 'false' }, body: file,
     });
-    if (!response.ok) throw new Error('A reference photo could not be uploaded. Please try again or send it directly in WhatsApp.');
+    if (!response.ok) throw new Error('A reference photo could not be uploaded. Please try again.');
     photos.push(objectPath);
   }
   const photoUrls = await Promise.all(photos.map((path) => signedCustomerOrderPhoto(path, customerSession)));
@@ -209,7 +232,14 @@ export async function saveRemoteCategory(name, sortOrder, session) {
 
 export async function deleteRemoteCategory(name, session) {
   const token = await adminToken(session);
-  await request(`/rest/v1/gallery_categories?name=eq.${encodeURIComponent(name)}`, { method: 'DELETE', token, headers: { Prefer: 'return=minimal' } });
+  if (name === 'Chocolate') throw new Error('Chocolate is the default gallery category and cannot be removed.');
+  const categories = await request('/rest/v1/gallery_categories?select=id,name', { token });
+  const fallback = categories.find((category) => category.name === 'Chocolate');
+  const removed = categories.find((category) => category.name === name);
+  if (!fallback || !removed) throw new Error('Could not find the gallery category. Please refresh and try again.');
+  await request(`/rest/v1/gallery_items?category_id=eq.${encodeURIComponent(removed.id)}`, { method: 'PATCH', body: { category_id: fallback.id }, token, headers: { Prefer: 'return=minimal' } });
+  await request(`/rest/v1/gallery_product_overrides?category=eq.${encodeURIComponent(name)}`, { method: 'PATCH', body: { category: 'Chocolate', updated_at: new Date().toISOString() }, token, headers: { Prefer: 'return=minimal' } });
+  await request(`/rest/v1/gallery_categories?id=eq.${encodeURIComponent(removed.id)}`, { method: 'DELETE', token, headers: { Prefer: 'return=minimal' } });
 }
 
 export async function saveRemoteProductOverride(product, session) {

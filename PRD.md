@@ -22,9 +22,9 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - The order form collects first and last name, phone with country code, email, collection date, preferred time, idea description, an allergy Yes/No choice, and up to five reference photos. If the customer selects Yes, show a required field for allergy or dietary details; selecting No records that there are no known notes.
 - The collection date must be at least three days ahead and is chosen from a calendar dropdown styled in the site's cream and rose colors. Preferred time uses a compact wheel dropdown with hours 1–12, minutes 00–59, and AM/PM, and must be between 10:00 am and 10:00 pm.
 - The idea prompt should invite chocolate and filling details, colours, message, size, and occasion.
-- Save orders and private reference photos to Supabase. Show the photos to the admin and include available photo links in the prepared WhatsApp order message.
+- Save orders and private reference photos to Supabase. Show the photos to the admin and include temporary private photo links in Sukkar’s new-order email.
 - Admin must accept or reject each new order before further processing. For accepted orders, admin proposes a price; the customer can accept or decline it.
-- After the customer accepts the price, admin can mark the order as preparing, choose a collection time with the same 1–12 hour, 00–59 minute, AM/PM wheel dropdown, and prepare a ready-to-collect WhatsApp message. My Orders refreshes to reflect the admin’s latest status and proposed price; when ready, it keeps the customer’s preferred time visible and highlights the confirmed collection time. Orders removed by the admin after collection disappear from the customer list.
+- After the customer accepts the price, admin can mark the order as preparing, choose a collection time with the same 1–12 hour, 00–59 minute, AM/PM wheel dropdown, and email the customer a ready-to-collect message. My Orders refreshes to reflect the admin’s latest status and proposed price; when ready, it keeps the customer’s preferred time visible and highlights the confirmed collection time. Orders removed by the admin after collection disappear from the customer list.
 - My Orders shows the full order journey, marks completed steps, highlights the current step, and clearly labels rejected or declined orders.
 - On collection, admin can mark the order collected and remove it. Payment is made at collection; online payment is not required.
 
@@ -34,13 +34,14 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - Admin can add photos with a required name, description, and category; edit existing photo details; manage categories; and hide, restore, or remove photos.
 - The dashboard displays order information, the same progress journey using admin status names, and enlarged attached reference photos. Reviews appear directly after Orders in the dashboard.
 - Keep the customer's preferred time visible on each admin order. Let admin choose the confirmed collection time from the same AM/PM wheel picker used by customers and show it prominently beside the ready status.
-- Admin can update the public phone number and address.
+- Admin can update the public receiving email address, phone number, and address.
+- Admin acceptance of a new order does not send a message. Rejection, price proposals, and collection-ready updates are emailed to the customer; customer order questions and price responses are emailed to Sukkar.
 
 ### Reviews and contact
 
 - Customers can submit a named review with a one-to-five-star rating.
 - New reviews require admin approval before appearing publicly. Show stars for every review and display approved reviews on the Reviews page and home page.
-- Contact page includes a message form, phone, location, Instagram, and Facebook. Contact messages open in WhatsApp with the message prepared.
+- Contact page includes a message form, phone, email, location, Instagram, and Facebook. Contact form submissions are sent directly to Sukkar by email, with customer email available for replies.
 - Show form success and submission-error messages outside the relevant form card. Keep star-rating validation beside the star selector.
 
 ## Design and quality
@@ -48,14 +49,14 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - Responsive on desktop and mobile; use Sukkar’s warm cream and chocolate visual style with soft rose selection accents for the date and time dropdowns. The allergy Yes/No choice is a dropdown list without an extra focus border.
 - Keep forms clear, validate required fields and limits, and show useful feedback.
 - Use Supabase Auth, PostgreSQL with Row Level Security, and Supabase Storage. Do not expose a Supabase service-role key in the browser.
-- WhatsApp opens a prepared message; the user must send it. The website does not process payments or arrange delivery.
+- Emails are sent through a Supabase Edge Function and EmailJS connected to Sukkar’s Gmail account; a custom domain is not required. Server-side EmailJS credentials and Sukkar’s receiving email are required. Gmail sending limits make this suitable for low-volume use. The website does not process payments or arrange delivery.
 - Without Supabase configuration, local preview data is stored only in the current browser and does not sync across devices.
 
 ## Acceptance checks
 
 - A signed-in customer can submit a valid order with up to five photos and see its status and agreed details.
 - The allergy dropdown records No by default; choosing Yes reveals a required details field and saves those details with the order.
-- Admin can accept/reject, propose a price, enter a collection time, notify through WhatsApp, and remove a collected order.
+- Admin can accept/reject, propose a price, enter a collection time, email customers about order updates, and remove a collected order. Accepting a new order sends no message.
 - Admin gallery edits are reflected in the public gallery with the same category and description.
 - A submitted review saves once, shows one confirmation or error (never both), and stays hidden until published.
 - Contact and social links work, and layouts remain usable on narrow screens.
