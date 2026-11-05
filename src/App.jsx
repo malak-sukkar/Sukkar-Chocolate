@@ -6,6 +6,7 @@ import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRe
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
+import { getLanguage, localizeDocument, setLanguage } from './language';
 import heroImage from './assets/hero.jpg';
 import aboutImage from './assets/about.jpg';
 import logo from './assets/logo.png';
@@ -18,7 +19,16 @@ const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
 const normalizeOrderTimes = (orders) => orders.map((order) => order.preferredPickupTime !== undefined ? order : ({ ...order, preferredPickupTime: order.status === 'Ready for collection' ? '' : (order.pickupTime || ''), pickupTime: order.status === 'Ready for collection' ? (order.pickupTime || '') : '' }));
 const categories = ['All treats', ...new Set(products.map((item) => item.category))];
 const fileToDataUrl = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); });
-const formatDate = (date) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+const formatDate = (date, language = getLanguage()) => new Date(`${date}T12:00:00`).toLocaleDateString(language === 'ar' ? 'ar' : undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+function useCurrentLanguage() {
+  const [language, setCurrentLanguage] = useState(getLanguage);
+  useEffect(() => {
+    const update = () => setCurrentLanguage(getLanguage());
+    window.addEventListener('sukkar-language-change', update);
+    return () => window.removeEventListener('sukkar-language-change', update);
+  }, []);
+  return language;
+}
 const normalizeTimeValue = (value) => {
   const time = String(value || '').trim();
   const twelveHour = time.match(/^(\d{1,2}):(\d{2})\s*(am|pm)$/i);
@@ -146,6 +156,7 @@ function TimeWheelColumn({ label, options, value, onChange }) {
 }
 
 function DatePickerDropdown({ name, minDate, required = false }) {
+  const language = useCurrentLanguage();
   const rootRef = useRef(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [open, setOpen] = useState(false);
@@ -160,13 +171,13 @@ function DatePickerDropdown({ name, minDate, required = false }) {
 
   const year = viewMonth.getFullYear();
   const month = viewMonth.getMonth();
-  const monthName = viewMonth.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+  const monthName = viewMonth.toLocaleDateString(language === 'ar' ? 'ar' : undefined, { month: 'long', year: 'numeric' });
   const leadingDays = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const calendarCells = [...Array(leadingDays).fill(null), ...Array.from({ length: daysInMonth }, (_, index) => index + 1)];
   const minimumMonth = new Date(minimum.getFullYear(), minimum.getMonth(), 1);
   const selectedLabel = selectedDate
-    ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+    ? new Date(`${selectedDate}T12:00:00`).toLocaleDateString(language === 'ar' ? 'ar' : undefined, { day: 'numeric', month: 'long', year: 'numeric' })
     : '';
   const dateValue = (day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
@@ -181,7 +192,7 @@ function DatePickerDropdown({ name, minDate, required = false }) {
         <button type="button" aria-label="Next month" onClick={() => setViewMonth(new Date(year, month + 1, 1))}><ChevronRight size={16} /></button>
       </div>
       <div className="date-picker-grid">
-        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <span key={`${day}-${index}`} className="date-picker-weekday">{day}</span>)}
+        {(language === 'ar' ? ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'] : ['S', 'M', 'T', 'W', 'T', 'F', 'S']).map((day, index) => <span key={`${day}-${index}`} className="date-picker-weekday">{day}</span>)}
         {calendarCells.map((day, index) => day === null
           ? <span className="date-picker-empty" key={`empty-${index}`} />
           : <button key={day} type="button" disabled={dateValue(day) < minDate} className={dateValue(day) === selectedDate ? 'selected' : ''} onClick={() => { setSelectedDate(dateValue(day)); setOpen(false); }}>{day}</button>)}
@@ -205,13 +216,14 @@ function usePublicContent(session) {
 function Header() {
   const [open, setOpen] = useState(false);
   const [customer, setCustomer] = useState(getCustomerSession);
+  const language = useCurrentLanguage();
   useEffect(() => {
     const updateCustomer = () => setCustomer(getCustomerSession());
     window.addEventListener('sukkar-customer-auth', updateCustomer);
     return () => window.removeEventListener('sukkar-customer-auth', updateCustomer);
   }, []);
   const links = [['Home', '/'], ['Our story', '/about'], ['Gallery', '/gallery'], ['Reviews', '/reviews'], ['My order', '/my-orders'], ['Contact', '/contact']];
-  return <header className="site-header"><Link to="/" className="brand" aria-label="Sukkar Chocolate home"><img src={logo} alt="Sukkar Chocolate" /></Link><button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button><nav className={open ? 'main-nav nav-open' : 'main-nav'}>{links.map(([label, path]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>{label}</NavLink>)}{customer ? <button className="customer-signout" onClick={() => { signOutCustomer(); setCustomer(null); setOpen(false); window.dispatchEvent(new Event('sukkar-customer-auth')); }}>Sign out</button> : <><NavLink to="/sign-in" onClick={() => setOpen(false)}>Sign in</NavLink><NavLink to="/register" onClick={() => setOpen(false)}>Register</NavLink></>}<Link className="nav-order" to="/custom" onClick={() => setOpen(false)}>Make an order <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="site-header"><Link to="/" className="brand" aria-label="Sukkar Chocolate home"><img src={logo} alt="Sukkar Chocolate" /></Link><button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button><nav className={open ? 'main-nav nav-open' : 'main-nav'}>{links.map(([label, path]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>{label}</NavLink>)}{customer ? <button className="customer-signout" onClick={() => { signOutCustomer(); setCustomer(null); setOpen(false); window.dispatchEvent(new Event('sukkar-customer-auth')); }}>Sign out</button> : <><NavLink to="/sign-in" onClick={() => setOpen(false)}>Sign in</NavLink><NavLink to="/register" onClick={() => setOpen(false)}>Register</NavLink></>}<button className="language-toggle" type="button" aria-label={language === 'ar' ? 'Switch language to English' : 'تغيير اللغة إلى العربية'} onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}>{language === 'ar' ? 'English' : 'العربية'}</button><Link className="nav-order" to="/custom" onClick={() => setOpen(false)}>Make an order <ArrowRight size={15}/></Link></nav></header>;
 }
 
 function ScrollToTop() {
@@ -503,6 +515,7 @@ function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
 function MyOrders() {
   const navigate = useNavigate();
   const location = useLocation();
+  const language = useCurrentLanguage();
   const [orders,setOrders]=useState(()=>normalizeOrderTimes(read(STORAGE.orders,[])));
   const [respondingOrder,setRespondingOrder]=useState(null);
   const [responseError,setResponseError]=useState('');
@@ -597,6 +610,7 @@ function MyOrders() {
 }
 
 function Admin() {
+  const language = useCurrentLanguage();
   const [session, setSession] = useState(getAdminSession);
   const shared = usePublicContent(session);
   const [orders, setOrders] = useState(() => normalizeOrderTimes(read(STORAGE.orders, [])));
@@ -1078,6 +1092,14 @@ function Admin() {
   );
 }
 function App() {
+  useEffect(() => {
+    const update = () => localizeDocument(getLanguage());
+    update();
+    const observer = new MutationObserver(update);
+    observer.observe(document.body, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['placeholder', 'aria-label', 'title', 'alt'] });
+    window.addEventListener('sukkar-language-change', update);
+    return () => { observer.disconnect(); window.removeEventListener('sukkar-language-change', update); };
+  }, []);
   return <BrowserRouter basename={import.meta.env.BASE_URL}><ScrollToTop/><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/about" element={<About/>}/><Route path="/gallery" element={<Gallery/>}/><Route path="/reviews" element={<Reviews/>}/><Route path="/custom" element={<CustomOrder/>}/><Route path="/contact" element={<Contact/>}/><Route path="/my-orders" element={<MyOrders/>}/><Route path="/sign-in" element={<CustomerAuth/>}/><Route path="/register" element={<CustomerAuth register/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes><Footer/><Link className="floating-order" to="/custom"><Heart size={15} fill="currentColor"/> Make it yours</Link></BrowserRouter>;
 }
 
