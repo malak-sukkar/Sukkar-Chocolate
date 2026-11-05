@@ -232,7 +232,7 @@ function ScrollToTop() {
 function Footer() {
   const shared = usePublicContent();
   const settings = shared?.settings || read(STORAGE.settings, {});
-  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Studio dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<Link className="social-link" to="/#location"><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</Link><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
+  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link><Link to="/admin">Admin Dashboard</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<Link className="social-link" to="/#location"><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</Link><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
 }
 
 function ButtonLink({ to, children, className = '' }) { return <Link className={`button ${className}`} to={to}>{children}<ArrowRight size={16}/></Link>; }
@@ -941,7 +941,7 @@ function Admin() {
 
   return (
     <main className="admin-page">
-      <PageIntro eyebrow="Sukkar studio" title={<>A little <em>dashboard.</em></>} text="Manage customer requests and your public gallery details." />
+      <PageIntro eyebrow="Sukkar admin" title="Admin Dashboard" text="Manage customer requests and your public gallery details." />
       {supabaseReady ? (
         <div className="admin-banner">
           <strong>{session ? 'Supabase connected' : 'Admin sign-in'}</strong>
