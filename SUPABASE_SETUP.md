@@ -1,6 +1,6 @@
 # Sukkar site setup
 
-The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase project is in London (`eu-west-2`). Postgres stores custom orders, gallery categories and uploaded photos, product photo edits, customer reviews and public contact details. Auth protects the studio dashboard, and separate Storage buckets hold public gallery photos and private customer reference photos. Customer and admin order messages are sent by email; the price is still agreed through the customer and admin order screens.
+The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase project is in London (`eu-west-2`). Postgres stores custom orders, gallery categories and uploaded photos, product photo edits, customer reviews and public contact details. Auth protects the Admin Dashboard, and separate Storage buckets hold public gallery photos and private customer reference photos. Customer and admin order messages are sent by email; the price is still agreed through the customer and admin order screens.
 
 ## Connect a Supabase project
 
