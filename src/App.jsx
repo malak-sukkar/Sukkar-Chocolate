@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Eye, EyeOff, Heart, Mail, MapPin, Menu, Phone, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Clock3, Eye, EyeOff, Heart, Mail, MapPin, Menu, Phone, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, getRemoteOrderStatus, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -211,7 +211,7 @@ function Header() {
     return () => window.removeEventListener('sukkar-customer-auth', updateCustomer);
   }, []);
   const links = [['Home', '/'], ['Our story', '/about'], ['Gallery', '/gallery'], ['Reviews', '/reviews'], ['My order', '/my-orders'], ['Contact', '/contact']];
-  return <header className="site-header"><Link to="/" className="brand" aria-label="Sukkar Chocolate home"><img src={logo} alt="Sukkar Chocolate" /></Link><button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button><nav className={open ? 'main-nav nav-open' : 'main-nav'}>{links.map(([label, path]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>{label}</NavLink>)}{customer ? <button className="customer-signout" onClick={() => { signOutCustomer(); setCustomer(null); setOpen(false); window.dispatchEvent(new Event('sukkar-customer-auth')); }}>Sign out</button> : <><NavLink to="/sign-in" onClick={() => setOpen(false)}>Sign in</NavLink><NavLink to="/register" onClick={() => setOpen(false)}>Register</NavLink></>}<Link className="nav-order" to="/custom" onClick={() => setOpen(false)}>Make an order <ArrowRight size={15}/></Link></nav></header>;
+  return <header className="site-header"><Link to="/" className="brand" aria-label="Sukkar Chocolate home"><img src={logo} alt="Sukkar Chocolate" /></Link><nav className={open ? 'main-nav nav-open' : 'main-nav'}>{links.map(([label, path]) => <NavLink key={path} to={path} end={path === '/'} onClick={() => setOpen(false)}>{label}</NavLink>)}{customer&&<button className="customer-signout" onClick={() => { signOutCustomer(); setCustomer(null); setOpen(false); window.dispatchEvent(new Event('sukkar-customer-auth')); }}>Sign out</button>}<Link className="nav-order" to="/custom" onClick={() => setOpen(false)}>Make an order <ArrowRight size={15}/></Link></nav><div className="header-tools"><NavLink className="account-nav-icon" to={customer?'/account':'/sign-in'} aria-label={customer?'Account settings':'Sign in to your account'} title={customer?'Account settings':'Sign in'}><UserRound size={20}/></NavLink><button className="menu-toggle" aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open} onClick={() => setOpen(!open)}>{open ? <X/> : <Menu/>}</button></div></header>;
 }
 
 function ScrollToTop() {
@@ -500,6 +500,61 @@ function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
   </ol>;
 }
 
+function CustomerAccount() {
+  const navigate=useNavigate();
+  const [session,setSession]=useState(getCustomerSession);
+  const [saving,setSaving]=useState(false);
+  const [emailMessage,setEmailMessage]=useState('');
+  const [emailError,setEmailError]=useState('');
+  const [passwordMessage,setPasswordMessage]=useState('');
+  const [passwordError,setPasswordError]=useState('');
+
+  useEffect(()=>{
+    const syncSession=()=>setSession(getCustomerSession());
+    window.addEventListener('sukkar-customer-auth',syncSession);
+    window.addEventListener('storage',syncSession);
+    return()=>{window.removeEventListener('sukkar-customer-auth',syncSession);window.removeEventListener('storage',syncSession);};
+  },[]);
+  useEffect(()=>{
+    if(!session) navigate(`/sign-in?next=${encodeURIComponent('/account')}`,{replace:true});
+  },[navigate,session]);
+
+  const saveEmail=async(event)=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const email=new FormData(form).get('customerEmail').trim();
+    setEmailError('');setEmailMessage('');
+    if(email.toLowerCase()===String(session?.user?.email||'').toLowerCase()){setEmailError('Enter a different email address.');return;}
+    setSaving(true);
+    try{
+      const updatedUser=await updateCustomerEmail(email,session);
+      setSession((current)=>current?{...current,user:updatedUser}:current);
+      setEmailMessage(supabaseReady?'Email change requested. Check your current and new email inboxes for Supabase confirmation links.':'Email updated for this local preview account.');
+      form.reset();
+    }catch(cause){
+      const message=cause.message||'';
+      setEmailError(/already (been )?registered|email_exists/i.test(message)?'That email is already in use. Choose an unused email address.':message||'Could not change your email. Please try again.');
+    }finally{setSaving(false);}
+  };
+  const savePassword=async(event)=>{
+    event.preventDefault();
+    const form=event.currentTarget;
+    const data=new FormData(form);
+    const password=data.get('newPassword');
+    setPasswordError('');setPasswordMessage('');
+    if(password!==data.get('confirmPassword')){setPasswordError('The passwords do not match.');return;}
+    setSaving(true);
+    try{
+      await updateCustomerPassword(password,session);
+      setPasswordMessage('Your password has been changed.');
+      form.reset();
+    }catch(cause){setPasswordError(cause.message||'Could not change your password. Please try again.');}
+    finally{setSaving(false);}
+  };
+
+  return <main className="inner-page account-settings-page"><PageIntro eyebrow="Your Sukkar account" title={<>Account <em>settings.</em></>} text="Update the email address or password you use to sign in."/>{session&&<section className="customer-account-settings"><div><span className="eyebrow">Account security</span><h2>Your sign-in details</h2><p>Keep your customer account details up to date.{!supabaseReady&&' Preview account changes are saved only in this browser.'}</p></div><div className="customer-account-forms"><form onSubmit={saveEmail} className="form-grid"><label className="full-field">Current email<input type="email" value={session.user?.email||''} readOnly /></label><label className="full-field">New email address<input name="customerEmail" type="email" required autoComplete="email" placeholder="new@example.com" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change email'} <ArrowRight size={15}/></button>{emailMessage&&<p className="success-message full-field" role="status">{emailMessage}</p>}{emailError&&<p className="error-message full-field" role="alert">{emailError}</p>}</form><form onSubmit={savePassword} className="form-grid"><label className="full-field">New password<PasswordInput id="customer-new-password" name="newPassword" required minLength="8" autoComplete="new-password" placeholder="At least 8 characters" /></label><label className="full-field">Confirm new password<PasswordInput id="customer-confirm-password" name="confirmPassword" required minLength="8" autoComplete="new-password" placeholder="Enter the new password again" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change password'} <ArrowRight size={15}/></button>{passwordMessage&&<p className="success-message full-field" role="status">{passwordMessage}</p>}{passwordError&&<p className="error-message full-field" role="alert">{passwordError}</p>}</form></div></section>}</main>;
+}
+
 function MyOrders() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -593,7 +648,24 @@ function MyOrders() {
     catch (cause) { setResponseError(cause.message || 'We could not email Sukkar. Please try again.'); }
     finally { setQuestionOrder(null); }
   };
-  return <main className="inner-page"><PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady?'Orders submitted on this browser will appear here, with updates from Sukkar.':'Orders submitted on this browser will appear here. We’ll agree the price and details together by email.'}/>{responseError&&<p className="error-message" role="alert">{responseError}</p>}{questionMessage&&<p className="success-message" role="status">{questionMessage}</p>}<div className="my-orders">{orders.length?orders.map(order=><article className="order-card" id={`order-${order.id}`} key={order.id}><div className="order-card-top"><span className="eyebrow">{order.id}</span></div><h2>Made for {order.name}</h2><p>{order.description}</p><div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status==='Awaiting price agreement'||order.status==='Accepted'?'Proposed price':'Agreed price'}<strong>{order.cost?formatPrice(order.cost):'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div><OrderStatusJourney status={order.status}/>{order.status==='Awaiting price agreement'&&<div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder===order.id} onClick={()=>respond(order,false)}>Reject price</button></div></div>}{order.status==='Price declined'&&<p className="price-response-note">You declined this price. Sukkar will review your order.</p>}<button className="text-link" type="button" disabled={questionOrder===order.id} onClick={()=>askAboutOrder(order)}>{questionOrder===order.id?'Sending email…':'Ask about this order'} <ArrowRight size={15}/></button></article>):<div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}</div></main>;
+  return (
+    <main className="inner-page">
+      <PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady ? 'Orders submitted on this browser will appear here, with updates from Sukkar.' : 'Orders submitted on this browser will appear here. We’ll agree the price and details together by email.'} />
+      {responseError && <p className="error-message" role="alert">{responseError}</p>}
+      {questionMessage && <p className="success-message" role="status">{questionMessage}</p>}
+      <div className="my-orders">
+        {orders.length ? orders.map((order) => <article className="order-card" id={`order-${order.id}`} key={order.id}>
+          <div className="order-card-top"><span className="eyebrow">{order.id}</span></div>
+          <h2>Made for {order.name}</h2><p>{order.description}</p>
+          <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div>
+          <OrderStatusJourney status={order.status} />
+          {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
+          {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
+          <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>
+        </article>) : <div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}
+      </div>
+    </main>
+  );
 }
 
 function Admin() {
@@ -1078,7 +1150,7 @@ function Admin() {
   );
 }
 function App() {
-  return <BrowserRouter basename={import.meta.env.BASE_URL}><ScrollToTop/><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/about" element={<About/>}/><Route path="/gallery" element={<Gallery/>}/><Route path="/reviews" element={<Reviews/>}/><Route path="/custom" element={<CustomOrder/>}/><Route path="/contact" element={<Contact/>}/><Route path="/my-orders" element={<MyOrders/>}/><Route path="/sign-in" element={<CustomerAuth/>}/><Route path="/register" element={<CustomerAuth register/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes><Footer/><Link className="floating-order" to="/custom"><Heart size={15} fill="currentColor"/> Make it yours</Link></BrowserRouter>;
+  return <BrowserRouter basename={import.meta.env.BASE_URL}><ScrollToTop/><Header/><Routes><Route path="/" element={<Home/>}/><Route path="/about" element={<About/>}/><Route path="/gallery" element={<Gallery/>}/><Route path="/reviews" element={<Reviews/>}/><Route path="/custom" element={<CustomOrder/>}/><Route path="/contact" element={<Contact/>}/><Route path="/my-orders" element={<MyOrders/>}/><Route path="/account" element={<CustomerAccount/>}/><Route path="/sign-in" element={<CustomerAuth/>}/><Route path="/register" element={<CustomerAuth register/>}/><Route path="/admin" element={<Admin/>}/><Route path="*" element={<Home/>}/></Routes><Footer/><Link className="floating-order" to="/custom"><Heart size={15} fill="currentColor"/> Make it yours</Link></BrowserRouter>;
 }
 
 export default App;

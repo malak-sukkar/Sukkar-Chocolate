@@ -52,6 +52,7 @@ Without those two environment values, the app uses local preview mode. You can a
 | `/custom` | Custom order form | `CustomOrder` in `src/App.jsx` |
 | `/contact` | Email contact form and contact details | `Contact` in `src/App.jsx` |
 | `/my-orders` | Customer order status and price response | `MyOrders` in `src/App.jsx` |
+| `/account` | Customer email/password settings | `CustomerAccount` in `src/App.jsx`; opened from the person icon in the navbar |
 | `/sign-in`, `/register` | Customer authentication | `CustomerAuth` in `src/App.jsx` |
 | `/admin` | Admin sign-in and Admin Dashboard | `Admin` in `src/App.jsx` |
 
@@ -122,6 +123,7 @@ The customer and admin see step journeys tailored to their role. The database st
 - Gallery categories are shared between the Admin Dashboard and public Gallery. Admins can add/edit photo name and description, assign a category, change visibility, and manage categories. When deleting a category, its photos are assigned to the default **Chocolate** category.
 - New reviews are unpublished until admin approval. Admin can show new reviews first, switch to all reviews, publish, hide, or delete. The public Reviews page displays six at a time, adds six with **Show more**, and can return to six with **Show less**.
 - Admin settings include public email, phone, address, map location (address or coordinates), and admin account email/password changes. Email changes may require confirmation from Supabase.
+- Signed-in customers can open the person icon in the navbar to change their account email or password on `/account`. Customer email changes may need confirmation through Supabase; local preview account updates stay in browser storage.
 - The home page map uses the saved map location; the address, map and footer are editable through the Admin Dashboard settings.
 - Contact information/social links and their placement are in the shared site components in `src/App.jsx`.
 

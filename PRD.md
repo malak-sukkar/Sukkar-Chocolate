@@ -35,6 +35,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - The idea description prompt should guide customers to include chocolate and filling, colours, message, size, and occasion.
 - Reference photos are stored privately in Supabase Storage and available to the admin with the order. The new-order email to Sukkar includes temporary links to the attached photos.
 - My Orders shows the customer’s order, proposed or agreed price in SYP, preferred collection time, confirmed collection time when ready, and the order journey. Customer responses to a price proposal are made from this page.
+- Signed-in customers can open the person icon in the top-right navigation bar to change their account email and password. Supabase email changes require confirmation; local preview changes apply only in that browser.
 
 ### Order journey and messages
 

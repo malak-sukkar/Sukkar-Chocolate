@@ -55,6 +55,45 @@ export async function updateAdminPassword(password, session) {
   return request('/auth/v1/user', { method: 'PUT', body: { password }, token: session.access_token });
 }
 
+export async function updateCustomerEmail(email, session) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!supabaseReady) {
+    const accounts = JSON.parse(localStorage.getItem('sukkar-preview-accounts') || '[]');
+    if (accounts.some((account) => account.id !== session?.user?.id && account.email === normalizedEmail)) {
+      throw new Error('An account with this email already exists in this browser. Choose another email address.');
+    }
+    const accountIndex = accounts.findIndex((account) => account.id === session?.user?.id);
+    if (accountIndex < 0) throw new Error('Could not find this preview account. Please sign in again.');
+    accounts[accountIndex] = { ...accounts[accountIndex], email: normalizedEmail };
+    localStorage.setItem('sukkar-preview-accounts', JSON.stringify(accounts));
+    const updatedSession = { ...session, user: { ...session.user, email: normalizedEmail } };
+    localStorage.setItem('sukkar-customer-session', JSON.stringify(updatedSession));
+    window.dispatchEvent(new Event('sukkar-customer-auth'));
+    return updatedSession.user;
+  }
+  session = await freshCustomerSession(session);
+  if (!session?.access_token) throw new Error('Please sign in again before changing your email.');
+  const user = await request('/auth/v1/user', { method: 'PUT', body: { email: normalizedEmail }, token: session.access_token });
+  localStorage.setItem('sukkar-customer-session', JSON.stringify({ ...session, user }));
+  window.dispatchEvent(new Event('sukkar-customer-auth'));
+  return user;
+}
+
+export async function updateCustomerPassword(password, session) {
+  if (!supabaseReady) {
+    const accounts = JSON.parse(localStorage.getItem('sukkar-preview-accounts') || '[]');
+    const accountIndex = accounts.findIndex((account) => account.id === session?.user?.id);
+    if (accountIndex < 0) throw new Error('Could not find this preview account. Please sign in again.');
+    const salt = [...crypto.getRandomValues(new Uint8Array(16))].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    accounts[accountIndex] = { ...accounts[accountIndex], salt, passwordHash: await hashPreviewPassword(password, salt) };
+    localStorage.setItem('sukkar-preview-accounts', JSON.stringify(accounts));
+    return;
+  }
+  session = await freshCustomerSession(session);
+  if (!session?.access_token) throw new Error('Please sign in again before changing your password.');
+  await request('/auth/v1/user', { method: 'PUT', body: { password }, token: session.access_token });
+}
+
 export async function signInAdmin(email, password) {
   const session = await request('/auth/v1/token?grant_type=password', { method: 'POST', body: { email, password } });
   const role = session.user?.app_metadata?.role;

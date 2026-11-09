@@ -14,6 +14,7 @@ Customers can browse the site without an account. They need to sign in or create
 - Filter gallery photos by category and open a photo to see it larger.
 - Send a custom order request with a description, collection date and preferred time, allergy details, and up to five reference photos.
 - Follow the order journey and respond to a proposed price in **My Orders**.
+- Open the person icon in the top-right of the navigation bar to change their account email or password.
 - Send Sukkar a message through the contact form or ask about an existing order.
 
 The collection date must be at least three days ahead. The customer’s preferred time must be between 10:00 AM and 10:00 PM. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.
