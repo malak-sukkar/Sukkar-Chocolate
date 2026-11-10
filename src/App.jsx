@@ -824,7 +824,16 @@ function Admin() {
     if (email.toLowerCase() === String(session.user?.email || '').toLowerCase()) { setAccountEmailError('Enter a different email address.'); setAccountSaving(false); return; }
     try {
       await updateAdminEmail(email, session);
-      setAccountEmailMessage('Email change requested. Check your current and new email inboxes for Supabase confirmation links.');
+      const nextSettings = { ...settings, email };
+      try {
+        if (supabaseReady && session) await saveRemoteSettings({ email }, session);
+        write(STORAGE.settings, nextSettings);
+        setSettings(nextSettings);
+      } catch {
+        setAccountEmailError('The sign-in email change was requested, but the website email could not be updated. Save it in Admin Dashboard → Site details, then reconnect EmailJS to send from the new address.');
+        return;
+      }
+      setAccountEmailMessage('Email change requested. Check both inboxes for Supabase confirmation links. Website notifications and reply addresses now use this email. To send from this address, reconnect it in EmailJS.');
       form.reset();
     } catch (cause) {
       const message = cause.message || '';
