@@ -8,6 +8,7 @@ import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
 import heroImage from './assets/hero.jpg';
 import aboutImage from './assets/about.jpg';
+import ourStoryImage from './assets/our-story.jpg';
 import logo from './assets/logo.png';
 import './App.css';
 
@@ -382,7 +383,7 @@ function Home() {
     </main>;
 }
 
-function About() { return <main className="inner-page"><PageIntro eyebrow="The hands behind the chocolate" title={<>A little story,<br/><em>made with love.</em></>} text="Sukkar began with a love of chocolate and the happiness that comes with sharing something made just for you."/><section className="about-layout"><div className="about-photo"><img src={aboutImage} alt="Sukkar's handmade chocolate creations"/><span>Little details make a big difference</span></div><div className="about-copy"><span className="eyebrow">Our story</span><h2>Small beginnings.<br/><em>Sweet intentions.</em></h2><p>Sukkar grew from a simple thought: the best gifts feel personal. A favourite colour, a name, a tiny detail only you would know — those are the things that make a treat feel like it belongs to someone.</p><p>Today, each order is still made by hand. We listen to your idea, share the details and make your chocolate especially for the occasion.</p><p>Thank you for being part of our story. We’re glad you’re here.</p><ButtonLink to="/custom">Make something together</ButtonLink></div></section><OrderNote/></main>; }
+function About() { return <main className="inner-page"><PageIntro eyebrow="The hands behind the chocolate" title={<>A little story,<br/><em>made with love.</em></>} text="Sukkar began with a love of chocolate and the happiness that comes with sharing something made just for you."/><section className="about-layout"><div className="about-photo"><img src={ourStoryImage} alt="Sukkar’s chocolatier preparing handmade chocolate in her workshop"/><span>Handmade with care at Sukkar</span></div><div className="about-copy"><span className="eyebrow">Our story</span><h2>Small beginnings.<br/><em>Sweet intentions.</em></h2><p>Sukkar grew from a simple thought: the best gifts feel personal. A favourite colour, a name, a tiny detail only you would know — those are the things that make a treat feel like it belongs to someone.</p><p>Today, each order is still made by hand. We listen to your idea, share the details and make your chocolate especially for the occasion.</p><p>Thank you for being part of our story. We’re glad you’re here.</p><ButtonLink to="/custom">Make something together</ButtonLink></div></section><OrderNote/></main>; }
 
 function Gallery() {
   const shared = usePublicContent();
