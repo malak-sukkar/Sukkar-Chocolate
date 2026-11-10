@@ -27,7 +27,25 @@ alter table public.orders enable row level security;
 drop policy if exists "Visitors can submit order requests" on public.orders;
 drop policy if exists "Customers can submit their own order requests" on public.orders;
 create policy "Customers can submit their own order requests" on public.orders for insert to authenticated
-with check (customer_user_id = auth.uid() and collection_date >= current_date + 3 and jsonb_array_length(photo_paths) <= 5);
+with check (
+  customer_user_id = auth.uid()
+  and collection_date >= current_date + 3
+  and status = 'Awaiting details'
+  and agreed_cost is null
+  and collection_time is null
+  and (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$')
+  and case when jsonb_typeof(photo_paths) = 'array' then
+    jsonb_array_length(photo_paths) <= 5
+    and not exists (
+      select 1 from jsonb_array_elements_text(photo_paths) as photo(path)
+      where split_part(photo.path, '/', 1) <> auth.uid()::text
+    )
+  else false end
+  and char_length(customer_name) between 1 and 120
+  and char_length(phone) between 1 and 40
+  and char_length(email) between 3 and 254
+  and char_length(description) between 1 and 4000
+);
 drop policy if exists "Customers can read their own orders" on public.orders;
 create policy "Customers can read their own orders" on public.orders for select to authenticated
 using (customer_user_id = auth.uid());
@@ -37,45 +55,6 @@ create policy "Admins can remove collected orders" on public.orders for delete t
 revoke insert on public.orders from anon;
 grant insert on public.orders to authenticated;
 grant select, update, delete on public.orders to authenticated;
-
-drop function if exists public.get_order_status(text, uuid);
-create function public.get_order_status(p_order_id text, p_tracking_token uuid)
-returns table (status text, agreed_cost text, collection_time text, preferred_collection_time text)
-language sql security definer set search_path = public
-as $$
-  select o.status, o.agreed_cost, o.collection_time, o.preferred_collection_time
-  from public.orders o
-  where o.id = p_order_id and o.tracking_token = p_tracking_token
-  limit 1;
-$$;
-revoke all on function public.get_order_status(text, uuid) from public;
-grant execute on function public.get_order_status(text, uuid) to anon, authenticated;
-
-create or replace function public.respond_to_order_price(p_order_id text, p_accept boolean)
-returns text
-language plpgsql security definer set search_path = public
-as $$
-declare
-  next_status text;
-begin
-  if auth.uid() is null then
-    raise exception 'Sign in to respond to this price proposal.';
-  end if;
-  next_status := case when p_accept then 'Preparing' else 'Price declined' end;
-  update public.orders
-  set status = next_status
-  where id = p_order_id
-    and customer_user_id = auth.uid()
-    and status = 'Awaiting price agreement'
-    and agreed_cost is not null;
-  if not found then
-    raise exception 'No pending price proposal was found for this order.';
-  end if;
-  return next_status;
-end;
-$$;
-revoke all on function public.respond_to_order_price(text, boolean) from public;
-grant execute on function public.respond_to_order_price(text, boolean) to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('order-reference-photos', 'order-reference-photos', false, 5242880, array['image/jpeg','image/png','image/webp','image/heic'])
@@ -91,6 +70,8 @@ revoke insert on storage.objects from anon;
 grant select on storage.objects to authenticated;
 grant insert on storage.objects to authenticated;
 create policy "Admins may view order reference photos" on storage.objects for select to authenticated
+using (bucket_id = 'order-reference-photos' and (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
+create policy "Admins may delete order reference photos" on storage.objects for delete to authenticated
 using (bucket_id = 'order-reference-photos' and (auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
 create table if not exists public.site_settings (
@@ -134,7 +115,8 @@ create table if not exists public.reviews (
 );
 alter table public.reviews enable row level security;
 create policy "Visitors can read published reviews" on public.reviews for select to anon, authenticated using (is_published);
-create policy "Visitors can submit reviews for moderation" on public.reviews for insert to anon with check (is_published = false);
+drop policy if exists "Visitors can submit reviews for moderation" on public.reviews;
+revoke insert on public.reviews from anon, authenticated;
 create policy "Admins can manage reviews" on public.reviews for all to authenticated
 using ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin') with check ((auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
@@ -206,12 +188,61 @@ create policy "Admins can insert reviews" on public.reviews for insert to authen
 create policy "Admins can update reviews" on public.reviews for update to authenticated using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin') with check ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 create policy "Admins can delete reviews" on public.reviews for delete to authenticated using ((select auth.jwt() -> 'app_metadata' ->> 'role') = 'admin');
 
+-- Server-only fixed-window limiter used by public form and email Edge Functions.
+create schema if not exists private;
+revoke all on schema private from public, anon, authenticated;
+create table if not exists private.rate_limit_windows (
+  rate_key text not null,
+  window_id bigint not null,
+  request_count integer not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  primary key (rate_key, window_id)
+);
+revoke all on private.rate_limit_windows from public, anon, authenticated;
+
+create or replace function public.consume_rate_limit(p_key text, p_window_seconds integer, p_max_requests integer)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_window_id bigint;
+  v_request_count integer;
+begin
+  if p_key is null or length(p_key) < 1 or length(p_key) > 256
+     or p_window_seconds < 1 or p_window_seconds > 86400
+     or p_max_requests < 1 or p_max_requests > 1000 then
+    raise exception 'Invalid rate limit parameters.';
+  end if;
+
+  v_window_id := floor(extract(epoch from clock_timestamp()) / p_window_seconds)::bigint;
+  insert into private.rate_limit_windows as limits (rate_key, window_id, request_count)
+  values (p_key, v_window_id, 1)
+  on conflict (rate_key, window_id) do update
+    set request_count = limits.request_count + 1,
+        updated_at = clock_timestamp()
+  returning request_count into v_request_count;
+
+  delete from private.rate_limit_windows
+  where created_at < clock_timestamp() - interval '2 days';
+
+  return v_request_count <= p_max_requests;
+end;
+$$;
+revoke all on function public.consume_rate_limit(text, integer, integer) from public, anon, authenticated;
+grant execute on function public.consume_rate_limit(text, integer, integer) to service_role;
+
+alter table public.orders drop constraint if exists orders_preferred_collection_time_hours_check;
+alter table public.orders add constraint orders_preferred_collection_time_hours_check
+  check (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$') not valid;
+
 create index if not exists orders_customer_user_id_idx on public.orders(customer_user_id);
 create index if not exists gallery_items_category_id_idx on public.gallery_items(category_id);
 create index if not exists reviews_published_created_idx on public.reviews(is_published, created_at desc);
 grant usage on schema public to anon, authenticated;
 grant select on public.site_settings, public.gallery_categories, public.gallery_items, public.gallery_product_overrides, public.reviews to anon, authenticated;
-grant insert on public.reviews to anon;
-grant insert, update, delete on public.gallery_categories, public.gallery_items, public.gallery_product_overrides, public.site_settings, public.reviews to authenticated;
-revoke execute on function public.respond_to_order_price(text, boolean) from anon, public;
-grant execute on function public.respond_to_order_price(text, boolean) to authenticated;
+grant insert, update, delete on public.gallery_categories, public.gallery_items, public.gallery_product_overrides, public.site_settings to authenticated;
+grant update, delete on public.reviews to authenticated;
+revoke insert on public.reviews from anon, authenticated;

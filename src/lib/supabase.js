@@ -167,16 +167,10 @@ export async function createRemoteOrder(order, files, customerSession) {
   return { ...order, trackingToken: token, photoPaths: photos, photoUrls };
 }
 
-export async function getRemoteOrderStatus(order) {
-  if (!order.trackingToken) return null;
-  const rows = await request('/rest/v1/rpc/get_order_status', { method: 'POST', body: { p_order_id: order.id, p_tracking_token: order.trackingToken } });
-  return Array.isArray(rows) ? rows[0] : rows;
-}
-
 export async function respondToPrice(orderId, accept, session) {
   session = await freshCustomerSession(session);
   if (!session?.access_token) throw new Error('Please sign in again to respond to this price.');
-  return request('/rest/v1/rpc/respond_to_order_price', { method: 'POST', body: { p_order_id: orderId, p_accept: accept }, token: session.access_token });
+  return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'respond_to_price', orderId, accept }, token: session.access_token });
 }
 
 export async function listRemoteOrders(session) {
@@ -251,7 +245,7 @@ export async function loadAdminContent(session) {
 }
 
 export async function savePublicReview(review) {
-  return request('/rest/v1/reviews', { method: 'POST', body: { customer_name: review.name, review: review.quote, rating: review.rating, is_published: false }, headers: { Prefer: 'return=minimal' } });
+  return request('/functions/v1/submit-review', { method: 'POST', body: { name: review.name, review: review.quote, rating: review.rating, website: review.website } });
 }
 
 export async function saveRemoteReview(id, isPublished, session) {

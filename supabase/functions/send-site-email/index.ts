@@ -19,6 +19,27 @@ const response = (body: Record<string, unknown>, status = 200) => Response.json(
 const validEmail = (value: unknown) => typeof value === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
 const clean = (value: unknown, max = 4000) => String(value ?? '').trim().slice(0, max);
 const escapeHtml = (value: unknown) => String(value ?? '').replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!);
+const digest = async (value: string) => {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return [...new Uint8Array(bytes)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+};
+const clientAddress = (request: Request) => {
+  const cloudflareAddress = request.headers.get('cf-connecting-ip');
+  const forwardedAddresses = request.headers.get('x-forwarded-for')?.split(',').map((part) => part.trim()).filter(Boolean);
+  return cloudflareAddress || forwardedAddresses?.at(-1) || request.headers.get('x-real-ip') || '';
+};
+async function consumeRateLimit(key: string, windowSeconds: number, maxRequests: number) {
+  const { data, error } = await adminClient.rpc('consume_rate_limit', {
+    p_key: await digest(key),
+    p_window_seconds: windowSeconds,
+    p_max_requests: maxRequests,
+  });
+  if (error) {
+    console.error('Rate limit check failed', { message: error.message });
+    throw new Error('Email sending is temporarily unavailable. Please try again later.');
+  }
+  return data === true;
+}
 const formatCollectionTime = (value: unknown) => {
   const time = clean(value, 40);
   const match = time.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
@@ -114,6 +135,12 @@ Deno.serve(async (request) => {
       const phone = clean(payload.phone, 40);
       const message = clean(payload.message, 4000);
       if (!name || !validEmail(email) || !message) return response({ error: 'Please provide your name, a valid email address, and a message.' }, 400);
+      const address = clientAddress(request);
+      if (!address) return response({ error: 'Please try sending your message again.' }, 503);
+      const addressKey = `contact:${await digest(address)}`;
+      if (!await consumeRateLimit(`${addressKey}:15m`, 900, 3) || !await consumeRateLimit(`${addressKey}:day`, 86400, 10)) {
+        return response({ error: 'Too many messages were sent from this connection. Please try again later.' }, 429);
+      }
       const adminEmail = await getAdminEmail();
       await sendEmail({ to: adminEmail, replyTo: email, subject: `Website message from ${name}`, text: `A customer sent Sukkar a message through the website.\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\n\n${message}` });
       return response({ ok: true });
@@ -132,8 +159,26 @@ Deno.serve(async (request) => {
     if (type.startsWith('admin_') && !isAdmin) return response({ error: 'Only the Sukkar admin can send this message.' }, 403);
     if (!type.startsWith('admin_') && order && order.customer_user_id !== user.id) return response({ error: 'You can only message Sukkar about your own order.' }, 403);
 
+    if (type === 'respond_to_price') {
+      if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
+      const accepted = payload.accept === true;
+      const { data, error } = await adminClient.from('orders')
+        .update({ status: accepted ? 'Preparing' : 'Price declined' })
+        .eq('id', order.id)
+        .eq('customer_user_id', user.id)
+        .eq('status', 'Awaiting price agreement')
+        .not('agreed_cost', 'is', null)
+        .select('status')
+        .maybeSingle();
+      if (error) throw new Error('We could not save your response. Please try again.');
+      if (!data) return response({ error: 'This price proposal is no longer waiting for a response.' }, 409);
+      return response({ status: data.status });
+    }
+
     if (type === 'order_submitted') {
       if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
+      if (order.status !== 'Awaiting details' || order.agreed_cost || order.collection_time) return response({ error: 'This order is no longer waiting for its first confirmation email.' }, 409);
+      if (!await consumeRateLimit(`mail:order_submitted:${user.id}:${order.id}`, 3600, 1)) return response({ error: 'The confirmation email for this order was already requested. Please check your inbox.' }, 429);
       const adminEmail = await getAdminEmail();
       const photoLinks = await getOrderPhotoLinks(order.photo_paths || []);
       const orderText = `New custom order request ${order.id}\n\nCustomer: ${order.customer_name}\nEmail: ${order.email}\nPhone: ${order.phone}\nCollection date: ${order.collection_date}\nPreferred time: ${order.preferred_collection_time}\nAllergies: ${order.allergies || 'No'}\n\nIdea:\n${order.description}${photoLinks.length ? `\n\nReference photos (available for 24 hours):\n${photoLinks.join('\n')}` : ''}`;
@@ -145,6 +190,7 @@ Deno.serve(async (request) => {
 
     if (type === 'order_question') {
       if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
+      if (!await consumeRateLimit(`mail:order_question:${user.id}`, 3600, 3)) return response({ error: 'You’ve reached the limit for order messages. Please try again later.' }, 429);
       const adminEmail = await getAdminEmail();
       await sendEmail({ to: adminEmail, replyTo: order.email, subject: `Customer question about order ${order.id}`, text: `${order.customer_name} asked Sukkar for an update about order ${order.id}.\n\nCustomer email: ${order.email}\nPhone: ${order.phone}` });
       return response({ ok: true });
@@ -152,14 +198,21 @@ Deno.serve(async (request) => {
 
     if (type === 'customer_price_response') {
       if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
-      const adminEmail = await getAdminEmail();
       const accepted = payload.accepted === true;
+      if (order.status !== (accepted ? 'Preparing' : 'Price declined') || !order.agreed_cost) return response({ error: 'This price proposal is no longer waiting for a response.' }, 409);
+      if (!await consumeRateLimit(`mail:price_response:${user.id}:${order.id}`, 3600, 2)) return response({ error: 'Your response email was already sent. Please check your inbox.' }, 429);
+      const adminEmail = await getAdminEmail();
       await sendEmail({ to: adminEmail, replyTo: order.email, subject: `${order.customer_name} ${accepted ? 'accepted' : 'declined'} the price for ${order.id}`, text: `${order.customer_name} ${accepted ? 'accepted' : 'declined'} the price proposal for order ${order.id}.\n\nProposed price: ${order.agreed_cost || 'Not available'}\nCustomer email: ${order.email}` });
       return response({ ok: true });
     }
 
     if (type === 'admin_order_rejected' || type === 'admin_price_proposal' || type === 'admin_ready_collection') {
       if (!order || !isAdmin) return response({ error: 'Order not found.' }, 404);
+      const expectedStatus = type === 'admin_order_rejected' ? 'Rejected' : type === 'admin_price_proposal' ? 'Awaiting price agreement' : 'Ready for collection';
+      if (order.status !== expectedStatus || (type === 'admin_price_proposal' && !order.agreed_cost) || (type === 'admin_ready_collection' && (!order.collection_time || !order.agreed_cost))) {
+        return response({ error: 'Update the order to the matching status and fill in its required details before emailing the customer.' }, 409);
+      }
+      if (!await consumeRateLimit(`mail:${type}:${order.id}`, 3600, 3)) return response({ error: 'Several emails were recently sent for this order. Please wait before trying again.' }, 429);
       const name = order.customer_name || 'there';
       let subject = '';
       let text = '';

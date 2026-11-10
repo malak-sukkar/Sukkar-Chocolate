@@ -1,2 +1,5 @@
 [functions.send-site-email]
 verify_jwt = false
+
+[functions.submit-review]
+verify_jwt = false
