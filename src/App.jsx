@@ -833,7 +833,7 @@ function Admin() {
         setAccountEmailError('The sign-in email change was requested, but the website email could not be updated. Save it in Admin Dashboard → Site details, then reconnect EmailJS to send from the new address.');
         return;
       }
-      setAccountEmailMessage('Email change requested. Check both inboxes for Supabase confirmation links. Website notifications and reply addresses now use this email. To send from this address, reconnect it in EmailJS.');
+      setAccountEmailMessage('Email change requested. Check both inboxes for Supabase confirmation links. Website notifications and reply addresses now use this email. To also send from this mailbox, connect it in Email delivery below.');
       form.reset();
     } catch (cause) {
       const message = cause.message || '';
@@ -1121,6 +1121,13 @@ function Admin() {
               <button className="button">Save details <ArrowRight size={15} /></button>
               {saved && <span className="success-message">{supabaseReady ? 'Saved to the shared site.' : 'Saved on this device.'}</span>}
             </form>
+          </section>
+          <section className="admin-section admin-settings email-delivery-settings">
+            <div><span className="eyebrow">Email delivery</span><h2>Sending account</h2><p>The Sukkar email above controls where website messages arrive and where replies go. The connected Gmail account controls the sender address.</p></div>
+            <div className="email-sender-panel">
+              <p>When the sending mailbox changes, you can update it yourself in EmailJS. Edit the existing Gmail service, connect the new mailbox, then save the service. Keep its Service ID unchanged so the website continues sending normally.</p>
+              <a className="button" href="https://dashboard.emailjs.com/admin" target="_blank" rel="noreferrer">Manage sending account <ArrowRight size={15} /></a>
+            </div>
           </section>
           <section className="admin-section admin-settings">
             <div><span className="eyebrow">Gallery collections</span><h2>Categories</h2>
