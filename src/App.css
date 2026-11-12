@@ -160,3 +160,18 @@
 @media(max-width:768px){.main-nav .nav-order{padding:11px 15px;gap:9px;font-size:11px}}
 
 @media(min-width:769px) and (max-width:900px){.site-header{height:88px;padding:0 3.5vw;gap:8px}.brand{flex:0 0 auto}.brand img{width:100px}.menu-toggle{display:none}.main-nav{display:flex;position:static;flex:1;min-width:0;margin-left:auto;padding:0;background:transparent;border:0;align-items:center;justify-content:flex-end;gap:14px;flex-direction:row}.main-nav>a,.main-nav .customer-signout{display:inline-flex;flex:0 0 auto;padding:6px 0;border:0;text-align:center;font-size:11px;white-space:nowrap}.main-nav .nav-order{flex:0 0 auto;justify-content:center;gap:6px;margin:0;padding:10px 12px;font-size:11px}.nav-primary-actions{width:auto;flex:0 0 auto;gap:7px;margin:0}.main-nav .account-nav-icon{width:34px;height:34px;flex:0 0 34px;padding:0;border:1px solid var(--line)}.customer-signout{font-size:11px}}
+
+/* Keep the site's main actions consistently in the same rose pink as the hero text. */
+.button,.main-nav .nav-order,.home-location-copy .button,.closing-cta .button,.lightbox .button,.collected-button{background:var(--button-pink);border-color:var(--button-pink);color:white}
+.button-outline{background:transparent;border-color:var(--button-pink);color:var(--rose)}
+.button:hover,.main-nav .nav-order:hover,.home-location-copy .button:hover,.closing-cta .button:hover,.lightbox .button:hover,.collected-button:hover,.button-outline:hover{background:var(--button-pink-hover);border-color:var(--button-pink-hover);color:white}
+.collected-button{border:1px solid var(--button-pink);border-radius:6px;padding:10px 14px;text-decoration:none;font-weight:600;transition:.2s}
+.review-actions .collected-button{border-color:var(--button-pink);background:var(--button-pink);color:white}
+.review-actions .collected-button:hover{border-color:var(--button-pink-hover);background:var(--button-pink-hover);color:white}
+.filter-chip.active,.filter-chip:hover{background:var(--button-pink);border-color:var(--button-pink);color:white}
+.account-nav-icon:hover,.account-nav-icon.active,.main-nav .account-nav-icon:hover,.main-nav .account-nav-icon.active{background:var(--button-pink);border-color:var(--button-pink);color:white}
+.floating-order,.floating-order:hover{background:var(--button-pink);color:white}
+.admin-section .review-actions .button,.admin-section .review-actions .collected-button{background:transparent;border:1px solid var(--rose);color:var(--rose);border-radius:6px;text-decoration:none}
+.admin-section .review-actions .button:hover,.admin-section .review-actions .collected-button:hover{background:rgba(155,81,74,.08);border-color:var(--rose);color:var(--rose)}
+.admin-section .gallery-admin-list .collected-button{background:transparent;border:1px solid var(--rose);color:var(--rose);border-radius:6px;text-decoration:none}
+.admin-section .gallery-admin-list .collected-button:hover{background:rgba(155,81,74,.08);border-color:var(--rose);color:var(--rose)}
