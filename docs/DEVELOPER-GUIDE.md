@@ -18,7 +18,7 @@ This guide is the starting point for a developer taking over the Sukkar Chocolat
 - `frontend/` contains the React app, Vite config, static assets, and the local `.env.example` template.
 - `backend/supabase/` contains the database schema, migrations, Storage setup, and Edge Functions.
 - `package.json`, `package-lock.json`, and `.github/workflows/` stay at the repository root so one set of npm scripts and one deployment workflow can manage the project.
-- Setup guides and product documentation remain at the root for easy access.
+- `docs/` contains the project brief, product requirements, owner guide, developer handoff, and service setup guides.
 
 The project supports both a connected Supabase mode and a limited local preview mode. These modes are not interchangeable: local preview data is stored in the current browser and does not reach the live website or another device.
 
@@ -71,7 +71,7 @@ Most page behavior and shared UI components currently live in the large `fronten
 - `backend/supabase/schema.sql` — database schema, RLS policies, helper functions, storage buckets/policies, and seed categories.
 - `backend/supabase/customer-auth-migration.sql` — customer ownership/auth changes and related RPC/policies.
 - `backend/supabase/functions/send-site-email/index.ts` — email API, authorization, message templates, private photo links.
-- `SUPABASE_SETUP.md` and `EMAIL_SETUP.md` — account-level setup notes. These are guides, not application runtime configuration.
+- `docs/SUPABASE_SETUP.md` and `docs/EMAIL_SETUP.md` — account-level setup notes. These are guides, not application runtime configuration.
 - `frontend/.env.example` — placeholder names only; safe template for local environment setup.
 - `.github/workflows/deploy.yml` — GitHub Pages build and deployment workflow.
 - `frontend/vite.config.js` — selects `/Sukkar-Chocolate/` for GitHub Actions and `/` for local development.
@@ -154,7 +154,7 @@ Accepting a new order intentionally sends no email. Customer-facing admin messag
 
 The EmailJS template needs `to_email`, `subject`, `reply_to`, and `message_html` (triple braces for HTML). The function also supplies `message_text`. Required Edge Function secrets are `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY`. Supabase supplies its own URL and key secrets to the function. Keep all provider private keys and Supabase service-role keys in Supabase Function Secrets. Never put them in this guide or the frontend.
 
-The current proposal URL is embedded in `backend/supabase/functions/send-site-email/index.ts` as the GitHub Pages `/Sukkar-Chocolate/my-orders` address. `getSiteUrl()` exists in the function but is currently not used to create that link. If the domain or project path changes, update and deploy the function, and check that both the HTML button and plain-text URL work. `EMAIL_SETUP.md` has account setup details. Email providers control inbox/spam placement; website code cannot guarantee Inbox delivery.
+The current proposal URL is embedded in `backend/supabase/functions/send-site-email/index.ts` as the GitHub Pages `/Sukkar-Chocolate/my-orders` address. `getSiteUrl()` exists in the function but is currently not used to create that link. If the domain or project path changes, update and deploy the function, and check that both the HTML button and plain-text URL work. `docs/EMAIL_SETUP.md` has account setup details. Email providers control inbox/spam placement; website code cannot guarantee Inbox delivery.
 
 ## 7. Environment variables and secret handling
 

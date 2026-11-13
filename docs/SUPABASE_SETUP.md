@@ -4,7 +4,7 @@ The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase p
 
 ## Connect a Supabase project
 
-1. The project is already created; open its SQL Editor and run [`backend/supabase/schema.sql`](backend/supabase/schema.sql) only if you need to recreate the schema from scratch. The current project already has the schema and gallery bucket migrations applied.
+1. The project is already created; open its SQL Editor and run [`backend/supabase/schema.sql`](../backend/supabase/schema.sql) only if you need to recreate the schema from scratch. The current project already has the schema and gallery bucket migrations applied.
 2. `frontend/.env.local` is configured locally with the project's URL and public publishable key. The key is intended for browser use; never use a service-role key in this React app.
 3. Restart the Vite dev server so it loads the local environment values.
 4. Create the owner's account in **Authentication → Users**. Set its `app_metadata` to `{"role":"admin"}` so the dashboard can verify it. Do not set the role in user-editable metadata.
