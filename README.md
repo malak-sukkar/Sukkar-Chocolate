@@ -1,6 +1,13 @@
 # Sukkar Chocolate
 
-A responsive React + JavaScript website for Sukkar handmade chocolate. Built with Vite and React Router. Supabase is the intended backend for shared customer orders, private reference photos, and admin authentication.
+A responsive React + JavaScript website for Sukkar handmade chocolate. Built with Vite and React Router. Supabase provides the backend for shared customer orders, private reference photos, and admin authentication.
+
+## Project structure
+
+- `frontend/` — React app, static assets, Vite configuration, and local frontend environment template.
+- `backend/supabase/` — database schema, migrations, Storage policies, and Supabase Edge Functions.
+- Root files — npm scripts/dependencies and GitHub Pages deployment workflow.
+- Markdown guides — setup instructions and project documentation.
 
 ## Run locally
 
@@ -9,7 +16,7 @@ npm install
 npm run dev
 ```
 
-Without Supabase credentials, the website uses browser storage for a local preview. To connect shared orders and the Admin Dashboard, follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md).
+For a Supabase-connected local run, copy `frontend/.env.example` to `frontend/.env.local` and add the project's public Supabase URL and publishable key. Without those values, the website uses browser storage for a local preview. Follow [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for backend setup.
 
 ## Pages
 

@@ -4,8 +4,8 @@ The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase p
 
 ## Connect a Supabase project
 
-1. The project is already created; open its SQL Editor and run [`supabase/schema.sql`](supabase/schema.sql) only if you need to recreate the schema from scratch. The current project already has the schema and gallery bucket migrations applied.
-2. `.env.local` is configured locally with the project's URL and public publishable key. The key is intended for browser use; never use a service-role key in this React app.
+1. The project is already created; open its SQL Editor and run [`backend/supabase/schema.sql`](backend/supabase/schema.sql) only if you need to recreate the schema from scratch. The current project already has the schema and gallery bucket migrations applied.
+2. `frontend/.env.local` is configured locally with the project's URL and public publishable key. The key is intended for browser use; never use a service-role key in this React app.
 3. Restart the Vite dev server so it loads the local environment values.
 4. Create the owner's account in **Authentication → Users**. Set its `app_metadata` to `{"role":"admin"}` so the dashboard can verify it. Do not set the role in user-editable metadata.
 5. Visit `/admin` and sign in with that account.
@@ -18,8 +18,8 @@ The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase p
 - Gallery categories, uploaded gallery photos, edits to bundled product photo names/descriptions/categories/visibility, customer reviews, and public email/phone/address details are shared through Supabase. New reviews wait for approval in the dashboard.
 - Email delivery uses the `send-site-email` Supabase Edge Function and EmailJS connected to Sukkar’s Gmail account. See [`EMAIL_SETUP.md`](EMAIL_SETUP.md) to connect Gmail and add the server-side secrets.
 - The existing bundled product images have been copied into the public gallery bucket. The gallery prefers those Supabase copies and keeps the bundled files as a local fallback.
-- Without `.env.local`, the site runs in local preview mode. Preview accounts, orders, reviews, settings, and gallery additions stay in that browser only and are not shared with the Supabase project.
+- Without `frontend/.env.local`, the site runs in local preview mode. Preview accounts, orders, reviews, settings, and gallery additions stay in that browser only and are not shared with the Supabase project.
 
 ## Current preview-mode limits
 
-The owner must still create the first Auth user and grant it the admin role in Supabase before signing in at `/admin`. No admin password is stored in the website files. The local development server must be restarted after setting `.env.local`.
+The owner must still create the first Auth user and grant it the admin role in Supabase before signing in at `/admin`. No admin password is stored in the website files. The local development server must be restarted after setting `frontend/.env.local`.

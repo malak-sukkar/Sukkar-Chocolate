@@ -6,12 +6,19 @@ This guide is the starting point for a developer taking over the Sukkar Chocolat
 
 - **Website:** React 19 + JavaScript single-page application, built with Vite 8.
 - **Routing:** React Router 7; the GitHub Pages deployment uses the `/Sukkar-Chocolate/` base path.
-- **Styles:** project CSS in `src/App.css` and `src/index.css`.
+- **Styles:** project CSS in `frontend/src/App.css` and `frontend/src/index.css`.
 - **Backend:** Supabase provides Postgres, Auth, Storage, row-level security (RLS), and the email Edge Function. There is no separate Express/Node server.
 - **Email delivery:** a Supabase Edge Function calls EmailJS using server-side secrets.
 - **Hosting:** GitHub Pages, deployed by GitHub Actions when changes are pushed to `main`.
 - **Live site:** <https://malak-sukkar.github.io/Sukkar-Chocolate/>
 - **Repository:** <https://github.com/malak-sukkar/Sukkar-Chocolate>
+
+### Folder layout
+
+- `frontend/` contains the React app, Vite config, static assets, and the local `.env.example` template.
+- `backend/supabase/` contains the database schema, migrations, Storage setup, and Edge Functions.
+- `package.json`, `package-lock.json`, and `.github/workflows/` stay at the repository root so one set of npm scripts and one deployment workflow can manage the project.
+- Setup guides and product documentation remain at the root for easy access.
 
 The project supports both a connected Supabase mode and a limited local preview mode. These modes are not interchangeable: local preview data is stored in the current browser and does not reach the live website or another device.
 
@@ -21,10 +28,10 @@ Prerequisites: Node.js 22 (matches the deployment workflow) and npm.
 
 ```powershell
 npm install
-Copy-Item .env.example .env.local
+Copy-Item frontend/.env.example frontend/.env.local
 ```
 
-For a real Supabase-connected local run, replace the example values in `.env.local` with the project's **URL** and **publishable key**. The variable names are:
+For a real Supabase-connected local run, replace the example values in `frontend/.env.local` with the project's **URL** and **publishable key**. The variable names are:
 
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
@@ -37,7 +44,7 @@ Start the development site:
 npm run dev
 ```
 
-Vite prints the local address, usually `http://localhost:5173`. Restart the dev server after changing `.env.local`.
+Vite prints the local address, usually `http://localhost:5173`. Restart the dev server after changing `frontend/.env.local`.
 
 Without those two environment values, the app uses local preview mode. You can also run `npm run build` to create the production bundle, `npm run preview` to serve that bundle locally, and `npm run lint` to run ESLint. There is currently no `npm test` script.
 
@@ -45,33 +52,35 @@ Without those two environment values, the app uses local preview mode. You can a
 
 | Path | Page | Main implementation |
 | --- | --- | --- |
-| `/` | Home, featured content, reviews, location map | `Home` in `src/App.jsx` |
-| `/about` | Sukkar story | `About` in `src/App.jsx` |
-| `/gallery` | Filterable gallery and photo details | `Gallery` in `src/App.jsx` |
-| `/reviews` | Public reviews, six at a time, review form | `Reviews` in `src/App.jsx` |
-| `/custom` | Custom order form | `CustomOrder` in `src/App.jsx` |
-| `/contact` | Email contact form and contact details | `Contact` in `src/App.jsx` |
-| `/my-orders` | Customer order status and price response | `MyOrders` in `src/App.jsx` |
-| `/account` | Customer email/password settings | `CustomerAccount` in `src/App.jsx`; opened from the person icon in the navbar |
-| `/sign-in`, `/register` | Customer authentication | `CustomerAuth` in `src/App.jsx` |
-| `/admin` | Admin sign-in and Admin Dashboard | `Admin` in `src/App.jsx` |
+| `/` | Home, featured content, reviews, location map | `Home` in `frontend/src/App.jsx` |
+| `/about` | Sukkar story | `About` in `frontend/src/App.jsx` |
+| `/gallery` | Filterable gallery and photo details | `Gallery` in `frontend/src/App.jsx` |
+| `/reviews` | Public reviews, six at a time, review form | `Reviews` in `frontend/src/App.jsx` |
+| `/custom` | Custom order form | `CustomOrder` in `frontend/src/App.jsx` |
+| `/contact` | Email contact form and contact details | `Contact` in `frontend/src/App.jsx` |
+| `/my-orders` | Customer order status and price response | `MyOrders` in `frontend/src/App.jsx` |
+| `/account` | Customer email/password settings | `CustomerAccount` in `frontend/src/App.jsx`; opened from the person icon in the navbar |
+| `/sign-in`, `/register` | Customer authentication | `CustomerAuth` in `frontend/src/App.jsx` |
+| `/admin` | Admin sign-in and Admin Dashboard | `Admin` in `frontend/src/App.jsx` |
 
-Most page behavior and shared UI components currently live in the large `src/App.jsx` file. Avoid assuming pages have their own component files. `src/App.css` contains page and component styling; `src/index.css` contains global styles and fonts. `src/main.jsx` mounts the application. `src/data/products.js` and `src/data/reviews.js` supply bundled fallback content. Images and logos live under `src/assets/`, including the `src/assets/products/` collection.
+Most page behavior and shared UI components currently live in the large `frontend/src/App.jsx` file. Avoid assuming pages have their own component files. `frontend/src/App.css` contains page and component styling; `frontend/src/index.css` contains global styles and fonts. `frontend/src/main.jsx` mounts the application. `frontend/src/data/products.js` and `frontend/src/data/reviews.js` supply bundled fallback content. Images and logos live under `frontend/src/assets/`, including the `frontend/src/assets/products/` collection.
 
 ### Supporting files
 
-- `src/lib/supabase.js` — REST/Auth/Storage/Edge Function client and local preview adapters.
-- `supabase/schema.sql` — database schema, RLS policies, helper functions, storage buckets/policies, and seed categories.
-- `supabase/customer-auth-migration.sql` — customer ownership/auth changes and related RPC/policies.
-- `supabase/functions/send-site-email/index.ts` — email API, authorization, message templates, private photo links.
+- `frontend/src/lib/supabase.js` — REST/Auth/Storage/Edge Function client and local preview adapters.
+- `backend/supabase/schema.sql` — database schema, RLS policies, helper functions, storage buckets/policies, and seed categories.
+- `backend/supabase/customer-auth-migration.sql` — customer ownership/auth changes and related RPC/policies.
+- `backend/supabase/functions/send-site-email/index.ts` — email API, authorization, message templates, private photo links.
 - `SUPABASE_SETUP.md` and `EMAIL_SETUP.md` — account-level setup notes. These are guides, not application runtime configuration.
-- `.env.example` — placeholder names only; safe template for local environment setup.
+- `frontend/.env.example` — placeholder names only; safe template for local environment setup.
 - `.github/workflows/deploy.yml` — GitHub Pages build and deployment workflow.
-- `vite.config.js` — selects `/Sukkar-Chocolate/` for GitHub Actions and `/` for local development.
+- `frontend/vite.config.js` — selects `/Sukkar-Chocolate/` for GitHub Actions and `/` for local development.
+
+Run Supabase CLI commands from the `backend/` directory so the CLI finds `backend/supabase/config.toml` and its migrations/functions.
 
 ## 4. Data and backend model
 
-Supabase is the shared source of truth when configured. The website accesses Supabase APIs with `fetch` from `src/lib/supabase.js`; there is no Express API layer.
+Supabase is the shared source of truth when configured. The website accesses Supabase APIs with `fetch` from `frontend/src/lib/supabase.js`; there is no Express API layer.
 
 ### Postgres tables
 
@@ -102,7 +111,7 @@ Schema files are useful for understanding the design, but the live project alrea
 - `get_order_status(order_id, tracking_token)` returns a limited order status only when both identifiers match. This is used for status refresh behavior.
 - `respond_to_order_price(order_id, accept)` lets an authenticated customer accept or decline their own proposed price and updates status in the database.
 
-See `supabase/schema.sql` and `supabase/customer-auth-migration.sql` for their exact SQL definitions and grants.
+See `backend/supabase/schema.sql` and `backend/supabase/customer-auth-migration.sql` for their exact SQL definitions and grants.
 
 ## 5. Customer and owner flows
 
@@ -125,11 +134,11 @@ The customer and admin see step journeys tailored to their role. The database st
 - Admin settings include public email, phone, address, map location (address or coordinates), and admin account email/password changes. Email changes may require confirmation from Supabase.
 - Signed-in customers can open the person icon in the navbar to change their account email or password on `/account`. Customer email changes may need confirmation through Supabase; local preview account updates stay in browser storage.
 - The home page map uses the saved map location; the address, map and footer are editable through the Admin Dashboard settings.
-- Contact information/social links and their placement are in the shared site components in `src/App.jsx`.
+- Contact information/social links and their placement are in the shared site components in `frontend/src/App.jsx`.
 
 ## 6. Email setup and message routing
 
-`src/lib/supabase.js` calls the `send-site-email` Supabase Edge Function. The function uses EmailJS to send through the connected Gmail service. Its event types currently include:
+`frontend/src/lib/supabase.js` calls the `send-site-email` Supabase Edge Function. The function uses EmailJS to send through the connected Gmail service. Its event types currently include:
 
 | Event | Recipient | Purpose |
 | --- | --- | --- |
@@ -145,7 +154,7 @@ Accepting a new order intentionally sends no email. Customer-facing admin messag
 
 The EmailJS template needs `to_email`, `subject`, `reply_to`, and `message_html` (triple braces for HTML). The function also supplies `message_text`. Required Edge Function secrets are `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY`. Supabase supplies its own URL and key secrets to the function. Keep all provider private keys and Supabase service-role keys in Supabase Function Secrets. Never put them in this guide or the frontend.
 
-The current proposal URL is embedded in `supabase/functions/send-site-email/index.ts` as the GitHub Pages `/Sukkar-Chocolate/my-orders` address. `getSiteUrl()` exists in the function but is currently not used to create that link. If the domain or project path changes, update and deploy the function, and check that both the HTML button and plain-text URL work. `EMAIL_SETUP.md` has account setup details. Email providers control inbox/spam placement; website code cannot guarantee Inbox delivery.
+The current proposal URL is embedded in `backend/supabase/functions/send-site-email/index.ts` as the GitHub Pages `/Sukkar-Chocolate/my-orders` address. `getSiteUrl()` exists in the function but is currently not used to create that link. If the domain or project path changes, update and deploy the function, and check that both the HTML button and plain-text URL work. `EMAIL_SETUP.md` has account setup details. Email providers control inbox/spam placement; website code cannot guarantee Inbox delivery.
 
 ## 7. Environment variables and secret handling
 
@@ -159,11 +168,11 @@ The current proposal URL is embedded in `supabase/functions/send-site-email/inde
 | `EMAILJS_PRIVATE_KEY` | Supabase Edge Function Secrets | Private; never expose |
 | Supabase service-role/secret key | Supabase Edge Function runtime | Highly privileged; never expose |
 
-`.env.local` is excluded by `.gitignore` (`*.local`). Keep actual environment files out of Git. GitHub Actions needs only the public Supabase URL and publishable key as repository Actions Variables for the frontend build. Do not put private provider or Supabase keys into GitHub Pages build variables.
+`frontend/.env.local` is excluded by `.gitignore` (`*.local`). Keep actual environment files out of Git. GitHub Actions needs only the public Supabase URL and publishable key as repository Actions Variables for the frontend build. Do not put private provider or Supabase keys into GitHub Pages build variables.
 
 ## 8. Local preview mode
 
-If either frontend Supabase value is missing, `supabaseReady` is false and `src/lib/supabase.js` uses browser `localStorage` for preview accounts, sessions, orders, reviews, settings, and gallery changes. This is useful for layout and interaction checks, but:
+If either frontend Supabase value is missing, `supabaseReady` is false and `frontend/src/lib/supabase.js` uses browser `localStorage` for preview accounts, sessions, orders, reviews, settings, and gallery changes. This is useful for layout and interaction checks, but:
 
 - data exists only in that browser profile and can be cleared with its site data;
 - it is not synchronized with Supabase, another device, or the deployed website;
@@ -172,7 +181,7 @@ If either frontend Supabase value is missing, `supabaseReady` is false and `src/
 
 ## 9. Build and deployment
 
-The GitHub Actions workflow in `.github/workflows/deploy.yml` runs on pushes to `main` and manual dispatch. It uses Node 22, runs `npm ci`, builds with `npm run build`, copies `dist/index.html` to `dist/404.html` for direct page links, and deploys `dist` to GitHub Pages.
+The GitHub Actions workflow in `.github/workflows/deploy.yml` runs on pushes to `main` and manual dispatch. It uses Node 22, runs `npm ci`, builds with `npm run build`, copies `frontend/dist/index.html` to `frontend/dist/404.html` for direct page links, and deploys `frontend/dist` to GitHub Pages.
 
 Before a production change:
 
@@ -182,15 +191,15 @@ Before a production change:
 4. For Edge Function changes, deploy `send-site-email` to the correct Supabase project and preserve its secrets.
 5. Commit and push to `main` only when authorized. Check the GitHub Actions run and open the published URL, including a direct route such as `/my-orders`.
 
-Project Pages configuration assumes the repository name remains `Sukkar-Chocolate`. If deploying under another repository or a custom domain, revisit `vite.config.js`, router base path, email links, and GitHub Pages settings.
+Project Pages configuration assumes the repository name remains `Sukkar-Chocolate`. If deploying under another repository or a custom domain, revisit `frontend/vite.config.js`, router base path, email links, and GitHub Pages settings.
 
 ## 10. Troubleshooting guide
 
-- **Site runs locally but data is missing on another device:** likely local preview mode, or the local `.env.local` does not point to the expected Supabase project.
+- **Site runs locally but data is missing on another device:** likely local preview mode, or the local `frontend/.env.local` does not point to the expected Supabase project.
 - **Admin can sign in but Admin Dashboard rejects the account:** verify the correct Supabase Auth user and `app_metadata.role = "admin"`, then sign out/in to refresh the JWT claims.
 - **Gallery image upload or order photo preview fails:** check the correct bucket, object path, Storage policies, current session, and signed URL expiration. Keep order reference photos private.
 - **Email fails:** verify the Edge Function is deployed to the connected project; its required EmailJS secrets exist; EmailJS service/template identifiers are correct; template variable names match; Gmail server API sending is enabled; Sukkar's recipient email is saved in Admin Dashboard; and Supabase function logs show the underlying sanitized error.
-- **Price email link fails or points to an old address:** inspect the hard-coded order URL in `supabase/functions/send-site-email/index.ts`, redeploy the function, and confirm the website base path.
+- **Price email link fails or points to an old address:** inspect the hard-coded order URL in `backend/supabase/functions/send-site-email/index.ts`, redeploy the function, and confirm the website base path.
 - **Direct URL works locally but not on Pages:** verify `404.html` copy and GitHub Pages base path `/Sukkar-Chocolate/`; check the workflow result.
 - **Unexpected permission issue:** inspect the relevant RLS policy and use an authenticated request with the expected user role/ownership. Do not work around RLS by exposing a privileged key.
 
@@ -198,8 +207,8 @@ Project Pages configuration assumes the repository name remains `Sukkar-Chocolat
 
 1. Read this guide, then `NON-TECHNICAL-GUIDE.md` for the customer and owner-facing product behavior.
 2. Run the app locally in preview mode to understand the screens; then configure the correct Supabase project if you need shared backend behavior.
-3. Read `src/lib/supabase.js` and the corresponding table/policy in `supabase/schema.sql` before changing a data flow.
-4. For email changes, follow the event authorization and template flow in `supabase/functions/send-site-email/index.ts`, and keep credentials in Supabase Function Secrets.
+3. Read `frontend/src/lib/supabase.js` and the corresponding table/policy in `backend/supabase/schema.sql` before changing a data flow.
+4. For email changes, follow the event authorization and template flow in `backend/supabase/functions/send-site-email/index.ts`, and keep credentials in Supabase Function Secrets.
 5. Review both customer and admin experiences for any order/status change, and confirm a direct GitHub Pages route still works after deployment.
 
 ## 12. Glossary

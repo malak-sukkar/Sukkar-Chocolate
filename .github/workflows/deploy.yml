@@ -43,7 +43,7 @@ jobs:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Support direct links to website pages
-        run: cp dist/index.html dist/404.html
+        run: cp frontend/dist/index.html frontend/dist/404.html
 
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v5
@@ -51,7 +51,7 @@ jobs:
       - name: Upload website files
         uses: actions/upload-pages-artifact@v4
         with:
-          path: dist
+          path: frontend/dist
 
   deploy:
     environment:
