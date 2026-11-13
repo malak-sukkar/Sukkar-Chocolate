@@ -177,4 +177,4 @@
 .admin-section .gallery-admin-list .collected-button:hover{background:rgba(155,81,74,.08);border-color:var(--rose);color:var(--rose)}
 .mobile-account-nav-icon{display:none}@media(max-width:768px){.main-nav .account-nav-icon{display:none}.header-tools .mobile-account-nav-icon{display:grid}}
 .nav-item-icon{display:none}@media(max-width:768px){.main-nav>a .nav-item-icon,.main-nav .customer-signout .nav-item-icon{display:block;flex:0 0 16px}.main-nav>a:not(.nav-order),.main-nav .customer-signout{display:flex;align-items:center;gap:12px}.main-nav .nav-order{display:flex;align-items:center;gap:10px}}
-@media(max-width:768px){.main-nav{padding:12px 6vw 16px}.main-nav>a:not(.nav-order){padding:8px 0;line-height:1.25}.main-nav .customer-signout{padding:8px 0;line-height:1.25}.nav-primary-actions{margin-top:8px}.main-nav .nav-order{padding:10px 14px}}
+@media(max-width:768px){.main-nav{padding:12px 6vw 16px}.main-nav>a:not(.nav-order){padding:11px 0;line-height:1.25}.main-nav .customer-signout{padding:11px 0;line-height:1.25}.nav-primary-actions{margin-top:10px}.main-nav .nav-order{padding:10px 14px}}
