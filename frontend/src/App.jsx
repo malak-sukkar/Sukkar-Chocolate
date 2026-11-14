@@ -244,7 +244,7 @@ function ScrollToTop() {
 function Footer() {
   const shared = usePublicContent();
   const settings = shared?.settings || read(STORAGE.settings, {});
-  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<Link className="social-link" to="/#location"><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</Link><a className="social-link" href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer"><FaInstagram size={16}/> Instagram</a><a className="social-link" href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer"><FaFacebookF size={16}/> Facebook</a></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with care, in Homs.</span></div></footer>;
+  return <footer className="site-footer"><div className="footer-main"><div><img className="footer-brand" src={logo} alt="Sukkar Chocolate"/><p>Little handmade moments,<br/>made to be shared.</p></div><div><h3>Explore</h3><Link to="/gallery">The gallery</Link><Link to="/about">Our story</Link><Link to="/reviews">Kind words</Link><Link to="/my-orders">My order</Link></div><div><h3>Have a sweet idea?</h3><p>Tell us what you’re dreaming of.</p><Link className="footer-link" to="/custom"><span>Create a custom order</span><ArrowRight size={15}/></Link></div><div><h3>Find us</h3><p><Phone size={15}/> {settings.phone || '+963 982 769 168'}</p>{settings.email && <a className="social-link" href={`mailto:${settings.email}`}><Mail size={15}/> {settings.email}</a>}<Link className="social-link" to="/#location"><MapPin size={15}/> {settings.address || 'Sadad, Homs, Syria'}</Link><div className="footer-social-icons"><a href="https://www.instagram.com/sukkar_chocolate/" target="_blank" rel="noreferrer" aria-label="Instagram" title="Instagram"><FaInstagram size={19}/></a><a href="https://www.facebook.com/share/1B7mhzjcAi/" target="_blank" rel="noreferrer" aria-label="Facebook" title="Facebook"><FaFacebookF size={18}/></a></div></div></div><div className="footer-bottom"><span>© {new Date().getFullYear()} Sukkar Chocolate</span><span>Handmade with love</span></div></footer>;
 }
 
 function ButtonLink({ to, children, className = '' }) { return <Link className={`button ${className}`} to={to}>{children}<ArrowRight size={16}/></Link>; }
@@ -331,11 +331,15 @@ function CustomerAuth({ register = false }) {
 
 function OrderNote({ compact = false }) { return <div className={`order-note ${compact ? 'compact' : ''}`}><span className="note-icon"><Clock3 size={19}/></span><div><strong>Made just for you, with a little time</strong><p>Please place your order at least 3 days before collection. We’ll agree the price together by email before we begin, and you can pay when you collect.</p></div></div>; }
 
+function AdminAccordionHeader({ id, eyebrow, title, description, open, onToggle, action, singleLineTitle = false }) {
+  return <div className="admin-section-title"><div><span className="eyebrow">{eyebrow}</span><h2><button className={`admin-accordion-toggle${open ? ' open' : ''}${singleLineTitle ? ' single-line' : ''}`} type="button" aria-expanded={open} aria-controls={`${id}-content`} onClick={onToggle}><ChevronDown size={20}/><span>{title}</span></button></h2>{description && <p>{description}</p>}</div>{action && <div className="admin-section-action">{action}</div>}</div>;
+}
+
 function ReviewCarousel({ reviews }) {
   const [index, setIndex] = useState(0);
   if (!reviews.length) return <div className="empty-reviews review-home-card"><span>♡</span><p>We’re waiting for the first kind words. Have ordered from Sukkar? We’d love to hear from you.</p><Link to="/reviews">Leave a review <ArrowRight size={15}/></Link></div>;
   const review = reviews[index % reviews.length];
-  return <div className="review-carousel review-home-card"><p className="review-by">{review.name}</p><ReviewStars rating={review.rating}/><blockquote>{review.quote}</blockquote><div className="carousel-controls"><span>{String(index + 1).padStart(2, '0')} <i>/ {String(reviews.length).padStart(2, '0')}</i></span><button aria-label="Previous review" onClick={() => setIndex((index - 1 + reviews.length) % reviews.length)}><ChevronLeft/></button><button aria-label="Next review" onClick={() => setIndex((index + 1) % reviews.length)}><ChevronRight/></button></div></div>;
+  return <div className="review-carousel-wrap"><div className="review-carousel review-home-card"><p className="review-by">{review.name}</p><ReviewStars rating={review.rating}/><blockquote>{review.quote}</blockquote><div className="carousel-controls"><button aria-label="Previous review" onClick={() => setIndex((index - 1 + reviews.length) % reviews.length)}><ChevronLeft/></button><button aria-label="Next review" onClick={() => setIndex((index + 1) % reviews.length)}><ChevronRight/></button></div></div><div className="review-carousel-dots" role="group" aria-label="Choose a review">{reviews.map((item, dotIndex)=><button key={item.id || `${item.name}-${dotIndex}`} type="button" className={dotIndex===index?'active':''} aria-label={`Show review ${dotIndex+1} of ${reviews.length}`} aria-pressed={dotIndex===index} onClick={()=>setIndex(dotIndex)}/>)}</div></div>;
 }
 
 function ReviewStars({ rating }) {
@@ -373,13 +377,13 @@ function Home() {
   const directionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(mapLocation)}`;
   const homeProducts = products.map((item) => ({ ...item, image: shared?.overrides?.[item.id]?.image || item.image }));
   const reviewItems = shared?.reviews || read(STORAGE.reviews, initialReviews);
-  return <main><section className="hero-section" style={{ '--hero-image': `url(${heroImage})` }}><div className="hero-copy"><span className="eyebrow">Handmade with love</span><h1>Make a moment<br/>a little <em>sweeter.</em></h1><p>Personalised chocolate and celebration treats, made by hand for the people and days you love.</p><div className="hero-actions"><ButtonLink to="/custom">Create a custom order</ButtonLink><Link className="button button-outline" to="/gallery">View gallery <ArrowDown size={15}/></Link></div></div></section>
-    <section className="intro-band"><span className="eyebrow">A little Sukkar goes a long way</span><p>From a name spelled in chocolate to a whole celebration table, tell us what you have in mind. <em>We’ll make it yours.</em></p></section>
-    <section className="story-strip"><div className="story-copy"><span className="eyebrow">A thoughtful kind of sweet</span><h2>Made by hand.<br/><em>Made for your moment.</em></h2><p>Every order begins with your idea. We shape, decorate and finish each piece with care, so it feels just right for the person receiving it.</p><ButtonLink to="/about" className="button-outline">Meet Sukkar</ButtonLink></div><div className="story-image"><img src={aboutImage} alt="Handmade chocolate treats prepared for a special occasion"/><span>Made with care, one order at a time</span></div></section>
-    <section className="occasions-section" id="occasions"><div className="section-heading"><div><span className="eyebrow">The days worth celebrating</span><h2>Sweetness for <em>every occasion.</em></h2></div><Link className="text-link" to="/gallery">Explore all the treats <ArrowRight size={16}/></Link></div><div className="occasion-cards">{[{ label:'Birthdays', photo:homeProducts[0]?.image, sub:'A little extra happy'},{label:'Baby showers', photo:homeProducts[17]?.image, sub:'For the newest arrival'},{label:'Just because', photo:homeProducts[19]?.image, sub:'No reason needed'}].map((item, i)=><Link to="/gallery" className={`occasion-card occasion-${i+1}`} key={item.label}><img src={item.photo} alt=""/><div><span>{item.sub}</span><h3>{item.label}</h3></div><ArrowRight size={17}/></Link>)}</div></section>
-    <section className="custom-feature"><div className="custom-photo"><img src={customImage} alt="Handmade chocolate gift boxes decorated for a baptism"/></div><div className="custom-feature-copy"><span className="eyebrow">Your idea, our little workshop</span><h2>Tell us what<br/>you’re <em>imagining.</em></h2><p>Send a description, a reference photo and your collection date. We’ll talk through the details and price together before anything is made.</p><ButtonLink to="/custom">Start a custom order</ButtonLink><span className="small-note">A few words or a full moodboard — either is lovely.</span></div></section>
-    <section className="promise-section"><div className="promise-heading"><span className="eyebrow">Good to know</span><h2>A few things before<br/><em>the first bite.</em></h2></div><div className="promise-content"><OrderNote compact/><div className="faq-mini"><h3>What about allergies?</h3><p>Please include any allergies in your request. We’ll confirm the ingredients and whether we can accommodate them before you place your order.</p><Link to="/contact">Ask us a question <ArrowRight size={14}/></Link></div></div></section>
-    <section className="reviews-section"><div className="reviews-heading"><span className="eyebrow">A few kind words</span><h2>From our table <em>to yours.</em></h2><Link to="/reviews" className="text-link">Read all reviews <ArrowRight size={15}/></Link></div><ReviewCarousel reviews={reviewItems}/></section>
+  return <main><section className="hero-section" style={{ '--hero-image': `url(${heroImage})` }}><div className="hero-copy"><h1>Make a moment<br/>a little <em>sweeter.</em></h1><p>Personalised chocolate and celebration treats, made by hand for the people and days you love.</p><div className="hero-actions"><ButtonLink to="/custom">Create a custom order</ButtonLink><Link className="button button-outline" to="/gallery">View gallery <ArrowDown size={15}/></Link></div></div></section>
+    <section className="intro-band"><span className="eyebrow">Handmade with love</span><p>From a name spelled in chocolate to a whole celebration table, tell us what you have in mind. <em>We’ll make it yours.</em></p></section>
+    <section className="story-strip"><div className="story-copy"><h2>Made by hand.<br/><em>Made for your moment.</em></h2><p>Every order begins with your idea. We shape, decorate and finish each piece with care, so it feels just right for the person receiving it.</p><ButtonLink to="/about" className="button-outline">Meet Sukkar</ButtonLink></div><div className="story-image"><img src={aboutImage} alt="Handmade chocolate treats prepared for a special occasion"/><span>Made with care, one order at a time</span></div></section>
+    <section className="occasions-section" id="occasions"><div className="section-heading"><div><h2>Sweetness for <em>every occasion.</em></h2></div><Link className="text-link" to="/gallery">Explore all the treats <ArrowRight size={16}/></Link></div><div className="occasion-cards">{[{ label:'Birthdays', photo:homeProducts[0]?.image, sub:'A little extra happy'},{label:'Baby showers', photo:homeProducts[17]?.image, sub:'For the newest arrival'},{label:'Just because', photo:homeProducts[19]?.image, sub:'No reason needed'}].map((item, i)=><Link to="/gallery" className={`occasion-card occasion-${i+1}`} key={item.label}><img src={item.photo} alt=""/><div><span>{item.sub}</span><h3>{item.label}</h3></div><ArrowRight size={17}/></Link>)}</div></section>
+    <section className="custom-feature"><div className="custom-photo"><img src={customImage} alt="Handmade chocolate gift boxes decorated for a baptism"/></div><div className="custom-feature-copy"><h2>Tell us what<br/>you’re <em>imagining.</em></h2><p>Send a description, a reference photo and your collection date. We’ll talk through the details and price together before anything is made.</p><ButtonLink to="/custom">Start a custom order</ButtonLink><span className="small-note">A few words or a full moodboard — either is lovely.</span></div></section>
+    <section className="promise-section"><div className="promise-heading"><span className="eyebrow">Good to know</span><h2>A few things before<br/><em>your first taste.</em></h2></div><div className="promise-content"><OrderNote compact/><div className="faq-mini"><h3>What about allergies?</h3><p>Please include any allergies in your request. We’ll confirm the ingredients and whether we can accommodate them before you place your order.</p><Link to="/contact">Ask us a question <ArrowRight size={14}/></Link></div></div></section>
+    <section className="reviews-section"><div className="reviews-heading"><span className="eyebrow">A few kind words</span><h2>From our table <em>to yours.</em></h2><Link to="/reviews" className="text-link">Read all reviews <ArrowRight size={15}/></Link></div><ReviewCarousel reviews={reviewItems.slice(0, 5)}/></section>
     <section className="home-location" id="location"><div className="home-location-copy"><span className="eyebrow">Find Sukkar</span><h2>A little sweetness,<br/><em>close to home.</em></h2><p>Visit us in person or open the map for directions to our location.</p><div className="home-location-address"><MapPin size={17}/><span>{location}</span></div><a className="button" href={directionsUrl} target="_blank" rel="noreferrer">Get directions <ArrowRight size={16}/></a></div><div className="home-location-map"><iframe title={`Map showing Sukkar Chocolate at ${location}`} src={`https://maps.google.com/maps?q=${encodeURIComponent(mapLocation)}&z=16&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" allowFullScreen /></div></section>
     </main>;
 }
@@ -402,7 +406,7 @@ function Gallery() {
   }).filter((item) => item.isVisible && !removed.has(item.id));
   const filters = ['All treats', ...(shared?.categories || read('sukkar-categories', categories).filter((item) => item !== 'All treats'))];
   const shown = active === 'All treats' ? items : items.filter((item) => item.category === active);
-  return <main className="inner-page"><PageIntro eyebrow="A peek at the sweet things" title={<>A gallery of <em>little joys.</em></>} text="Every piece is made to order, so colours and details can be tailored to your celebration."/><div className="filter-row" aria-label="Filter gallery">{filters.map((category) => <button key={category} className={active===category?'filter-chip active':'filter-chip'} onClick={()=>setActive(category)}>{category}</button>)}</div><div className="gallery-grid">{shown.map((item, i)=><button className={`gallery-item gallery-item-${i%6}`} key={item.id || item.name} onClick={()=>setSelected(item)}><img src={item.image} alt={item.name || 'Handmade Sukkar treat'}/><span className="gallery-caption"><span>{item.category}</span><strong>{item.name || 'A Sukkar creation'}</strong>{item.description && <small>{item.description}</small>}</span></button>)}</div>{shown.length===0&&<p className="empty-state">More treats are on the way. Choose another collection to explore.</p>}{selected&&<div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.name} onClick={()=>setSelected(null)}><button className="lightbox-close" aria-label="Close"><X/></button><img src={selected.image} alt={selected.name}/><div><span className="eyebrow">{selected.category}</span><h2>{selected.name}</h2>{selected.description && <p>{selected.description}</p>}<Link className="button" to="/custom">Ask about a custom version <ArrowRight size={15}/></Link></div></div>}</main>;
+  return <main className="inner-page"><PageIntro eyebrow="Our chocolates" title={<>A gallery of <em>little joys.</em></>} text="Every piece is made to order, so colours and details can be tailored to your celebration."/><div className="filter-row" aria-label="Filter gallery">{filters.map((category) => <button key={category} className={active===category?'filter-chip active':'filter-chip'} onClick={()=>setActive(category)}>{category}</button>)}</div><div className="gallery-grid">{shown.map((item, i)=><button className={`gallery-item gallery-item-${i%6}`} key={item.id || item.name} onClick={()=>setSelected(item)}><img src={item.image} alt={item.name || 'Handmade Sukkar treat'}/><span className="gallery-caption"><span>{item.category}</span><strong>{item.name || 'A Sukkar creation'}</strong>{item.description && <small>{item.description}</small>}</span></button>)}</div>{shown.length===0&&<p className="empty-state">More treats are on the way. Choose another collection to explore.</p>}{selected&&<div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.name} onClick={()=>setSelected(null)}><button className="lightbox-close" aria-label="Close"><X/></button><img src={selected.image} alt={selected.name}/><div><span className="eyebrow">{selected.category}</span><h2>{selected.name}</h2>{selected.description && <p>{selected.description}</p>}<Link className="button" to="/custom">Ask about a custom version <ArrowRight size={15}/></Link></div></div>}</main>;
 }
 
 function Reviews() {
@@ -688,6 +692,7 @@ function Admin() {
   const [accountPasswordError, setAccountPasswordError] = useState('');
   const [accountSaving, setAccountSaving] = useState(false);
   const [loginError, setLoginError] = useState('');
+  const [openAdminSection, setOpenAdminSection] = useState('orders');
   const [loading, setLoading] = useState(false);
   const [adminReviews, setAdminReviews] = useState([]);
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -1013,6 +1018,7 @@ function Admin() {
 
   const newReviews = adminReviews.filter((review) => !review.isPublished);
   const visibleReviews = showAllReviews ? adminReviews : newReviews;
+  const toggleAdminSection = (section) => setOpenAdminSection((current) => current === section ? '' : section);
 
   const login = async (event) => {
     event.preventDefault();
@@ -1051,7 +1057,8 @@ function Admin() {
       ) : (
         <>
           <section className="admin-section">
-            <div className="admin-section-title"><div><span className="eyebrow">Customer requests</span><h2>Orders <span>{orders.length}</span></h2></div></div>
+            <AdminAccordionHeader id="orders" eyebrow="Customer requests" title={<>Orders&nbsp;<span className="admin-count-badge">{orders.length}</span></>} open={openAdminSection === 'orders'} onToggle={() => toggleAdminSection('orders')} singleLineTitle />
+            <div id="orders-content" className="admin-section-content" hidden={openAdminSection !== 'orders'}>
             {orders.length ? orders.map((order) => (
               <article className="admin-order" key={order.id}>
                 <div className="admin-order-info">
@@ -1086,15 +1093,19 @@ function Admin() {
                 </div>
               </article>
             )) : <div className="empty-state">New customer requests will appear here.</div>}
+            </div>
           </section>
           <section className="admin-section">
-            <div className="admin-section-title"><div><span className="eyebrow">Customer notes</span><h2>{showAllReviews ? 'All reviews' : 'New reviews'} <span>{visibleReviews.length}</span></h2><p>{showAllReviews ? 'Review every submission and hide published reviews from the customer page when needed.' : 'New customer reviews stay hidden until you approve them.'}</p></div>{adminReviews.length > 0 && <button className="text-link" type="button" aria-expanded={showAllReviews} onClick={() => setShowAllReviews((visible) => !visible)}>{showAllReviews ? 'Hide all reviews' : 'Show all reviews'} <ArrowRight size={15}/></button>}</div>
+            <AdminAccordionHeader id="reviews" eyebrow="Customer notes" title={<>{showAllReviews ? 'All reviews' : 'New reviews'}&nbsp;<span className="admin-count-badge">{visibleReviews.length}</span></>} description={showAllReviews ? 'Review every submission and hide published reviews from the customer page when needed.' : 'New customer reviews stay hidden until you approve them.'} open={openAdminSection === 'reviews'} onToggle={() => toggleAdminSection('reviews')} singleLineTitle action={adminReviews.length > 0 && <button className="text-link" type="button" aria-expanded={showAllReviews} onClick={() => { setShowAllReviews((visible) => !visible); setOpenAdminSection('reviews'); }}>{showAllReviews ? 'Hide all reviews' : 'Show all reviews'} <ArrowRight size={15}/></button>} />
+            <div id="reviews-content" className="admin-section-content" hidden={openAdminSection !== 'reviews'}>
             <div className="reviews-list">
               {visibleReviews.length ? visibleReviews.map((review) => <article className="review-card" key={review.id}><span className="review-by">{review.name} · {review.isPublished ? 'Published' : 'Pending approval'}</span><ReviewStars rating={review.rating}/><p>{review.quote}</p><div className="review-actions">{!review.isPublished && <button className="button" type="button" onClick={() => moderateReview(review, true)}>Publish review</button>}{review.isPublished && <button className="collected-button" type="button" onClick={() => moderateReview(review, false)}>Hide review</button>}<button className="collected-button" type="button" onClick={() => removeReview(review)}>Delete review</button></div></article>) : <p className="empty-state">{adminReviews.length ? 'No new reviews. Show all reviews to manage published ones.' : 'No customer reviews have been submitted yet.'}</p>}
             </div>
+            </div>
           </section>
           {supabaseReady && session && <section className="admin-section admin-settings">
-            <div><span className="eyebrow">Account security</span><h2>Admin sign-in details</h2><p>Change the email or password you use to sign in to the dashboard. Email changes need confirmation from Supabase.</p></div>
+            <AdminAccordionHeader id="admin-account" eyebrow="Account security" title="Admin sign-in details" description="Change the email or password you use to sign in to the dashboard. Email changes need confirmation from Supabase." open={openAdminSection === 'admin-account'} onToggle={() => toggleAdminSection('admin-account')} />
+            <div id="admin-account-content" className="admin-section-content" hidden={openAdminSection !== 'admin-account'}>
             <div className="admin-account-forms">
               <form onSubmit={saveAdminEmail} className="form-grid">
                 <label className="full-field">Current email<input type="email" value={session.user?.email || ''} readOnly /></label>
@@ -1111,9 +1122,11 @@ function Admin() {
                 {accountPasswordError && <p className="error-message full-field" role="alert">{accountPasswordError}</p>}
               </form>
             </div>
+            </div>
           </section>}
           <section className="admin-section admin-settings">
-            <div><span className="eyebrow">Public details</span><h2>Keep in touch</h2><p>Update the contact details and collection location shown on the site. The map location controls the home page pin and directions. Order and contact messages are sent to the email address.</p></div>
+            <AdminAccordionHeader id="site-details" eyebrow="Public details" title="Keep in touch" description="Update the contact details and collection location shown on the site. The map location controls the home page pin and directions. Order and contact messages are sent to the email address." open={openAdminSection === 'site-details'} onToggle={() => toggleAdminSection('site-details')} />
+            <div id="site-details-content" className="admin-section-content" hidden={openAdminSection !== 'site-details'}>
             <form key={shared ? JSON.stringify(settings) : 'settings-loading'} onSubmit={saveSettings} className="form-grid">
               <label>Sukkar email<input name="email" type="email" required defaultValue={settings.email || ''} placeholder="hello@example.com" /></label>
               <label>Phone number<input name="phone" defaultValue={settings.phone || '+963 982 769 168'} /></label>
@@ -1123,25 +1136,33 @@ function Admin() {
               <button className="button">Save details <ArrowRight size={15} /></button>
               {saved && <span className="success-message">{supabaseReady ? 'Saved to the shared site.' : 'Saved on this device.'}</span>}
             </form>
+            </div>
           </section>
           <section className="admin-section admin-settings email-delivery-settings">
-            <div><span className="eyebrow">Email delivery</span><h2>Sending account</h2><p>The Sukkar email above controls where website messages arrive and where replies go. The connected Gmail account controls the sender address.</p></div>
+            <AdminAccordionHeader id="email-delivery" eyebrow="Email delivery" title="Sending account" description="The Sukkar email above controls where website messages arrive and where replies go. The connected Gmail account controls the sender address." open={openAdminSection === 'email-delivery'} onToggle={() => toggleAdminSection('email-delivery')} />
+            <div id="email-delivery-content" className="admin-section-content" hidden={openAdminSection !== 'email-delivery'}>
             <div className="email-sender-panel">
               <p>When the sending mailbox changes, you can update it yourself in EmailJS. Edit the existing Gmail service, connect the new mailbox, then save the service. Keep its Service ID unchanged so the website continues sending normally.</p>
               <a className="button" href="https://dashboard.emailjs.com/admin" target="_blank" rel="noreferrer">Manage sending account <ArrowRight size={15} /></a>
             </div>
+            </div>
           </section>
           <section className="admin-section admin-settings">
-            <div><span className="eyebrow">Gallery collections</span><h2>Categories</h2>
+            <AdminAccordionHeader id="gallery-categories" eyebrow="Gallery collections" title="Categories" open={openAdminSection === 'gallery-categories'} onToggle={() => toggleAdminSection('gallery-categories')} />
+            <div id="gallery-categories-content" className="admin-section-content" hidden={openAdminSection !== 'gallery-categories'}>
+            <div>
               <div className="category-admin">{categoryList.map((category) => <span key={category}>{category}{category !== 'All treats' && category !== 'Chocolate' && <button aria-label={`Remove ${category}`} onClick={() => deleteCategory(category)}><X size={13} /></button>}</span>)}</div>
             </div>
             <form className="category-add" onSubmit={addCategory}>
               <label>Add a category<input name="category" required maxLength="40" placeholder="e.g. Graduation" /></label>
               <button className="button">Add category <ArrowRight size={15} /></button>
             </form>
+            </div>
           </section>
           <section className="admin-section">
-            <div><span className="eyebrow">Gallery images</span><h2>Add a photo</h2><p>Add a name, description and category for the photos you upload.</p>
+            <AdminAccordionHeader id="gallery-photos" eyebrow="Gallery images" title="Add a photo" description="Add a name, description and category for the photos you upload." open={openAdminSection === 'gallery-photos'} onToggle={() => toggleAdminSection('gallery-photos')} />
+            <div id="gallery-photos-content" className="admin-section-content" hidden={openAdminSection !== 'gallery-photos'}>
+            <div>
               <form className="admin-photo-form form-grid" onSubmit={addPhotos}>
                 <label className="full-field">Photo name<input name="photoName" required maxLength="100" placeholder="e.g. Chocolate birthday box" /></label>
                 <label className="photo-category-select">Photo category
@@ -1166,6 +1187,7 @@ function Admin() {
                   <button className="collected-button" onClick={() => removePhoto(item.id)}>{item.isVisible ? 'Remove photo' : 'Restore photo'}</button>
                 </div>
               ))}</div>
+            </div>
             </div>
           </section>
         </>
