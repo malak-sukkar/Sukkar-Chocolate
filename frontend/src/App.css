@@ -202,6 +202,8 @@
 .admin-section-content[hidden]{display:none!important}
 .admin-section-content#orders-content{display:flex;flex-direction:column;gap:20px}
 .customer-order-actions{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-top:18px}
+.customer-cancel-group{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.customer-cancel-group small{color:#82766c;font-size:10px;line-height:1.5}
 .order-cancelled-status{margin:16px 0 4px;padding:11px 14px;border-left:3px solid #9b514a;background:#f3e8e4;color:#7d403a;font-size:11px;font-weight:600}
 .admin-accordion-toggle.single-line>span{white-space:nowrap}
 @media(max-width:600px){.admin-section-title{flex-direction:column;align-items:stretch;gap:8px}.admin-section-action{align-self:flex-start}.admin-section h2{font-size:27px}}
