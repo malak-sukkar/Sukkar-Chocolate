@@ -17,7 +17,7 @@ const SUKKAR_MAP_PIN = '34.314331,36.924356';
 const STORAGE = { orders: 'sukkar-orders', customerHiddenOrders: 'sukkar-customer-hidden-orders', adminHiddenOrders: 'sukkar-admin-hidden-orders', reviews: 'sukkar-reviews', settings: 'sukkar-settings', photos: 'sukkar-photos' };
 const read = (key, fallback) => { try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; } };
 const write = (key, value) => localStorage.setItem(key, JSON.stringify(value));
-const normalizeOrderTimes = (orders) => orders.map((order) => order.preferredPickupTime !== undefined ? order : ({ ...order, preferredPickupTime: order.status === 'Ready for collection' ? '' : (order.pickupTime || ''), pickupTime: order.status === 'Ready for collection' ? (order.pickupTime || '') : '' }));
+const normalizeOrderTimes = (orders) => orders.map((order) => ({ ...order, pickupDate: order.pickupDate || order.date || '', pickupTime: order.pickupTime || '' }));
 const categories = ['All treats', ...new Set(products.map((item) => item.category))];
 const fileToDataUrl = (file) => new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file); });
 const formatDate = (date) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
@@ -33,13 +33,6 @@ const normalizeTimeValue = (value) => {
   if (!twentyFourHour || Number(twentyFourHour[1]) > 23 || Number(twentyFourHour[2]) > 59) return '';
   return `${String(Number(twentyFourHour[1])).padStart(2, '0')}:${twentyFourHour[2]}`;
 };
-const isPreferredCollectionTimeAllowed = (value) => {
-  const normalized = normalizeTimeValue(value);
-  if (!normalized) return false;
-  const [hour, minute] = normalized.split(':').map(Number);
-  const minutesSinceMidnight = hour * 60 + minute;
-  return minutesSinceMidnight >= 10 * 60 && minutesSinceMidnight <= 22 * 60;
-};
 const formatCollectionTime = (value) => {
   const normalized = normalizeTimeValue(value);
   if (!normalized) return value || '';
@@ -52,20 +45,7 @@ const formatPrice = (value) => {
   return /\bSYP$/i.test(price) ? price : `${price} SYP`;
 };
 
-function PickupTimePicker({ value = '', name, onChange, daytimeOnly = false, required = false }) {
-  return <input
-    aria-label={daytimeOnly ? 'Preferred collection time' : 'Collection time'}
-    name={name}
-    type="time"
-    value={normalizeTimeValue(value)}
-    min={daytimeOnly ? '10:00' : undefined}
-    max={daytimeOnly ? '22:00' : undefined}
-    required={required}
-    onChange={(event) => onChange?.(event.target.value)}
-  />;
-}
-
-function PreferredTimeWheelPicker({ name, value = '', onChange, label = 'preferred collection time', invalid = false }) {
+function CollectionTimePicker({ name, value = '', onChange, label = 'collection time' }) {
   const rootRef = useRef(null);
   const normalized = normalizeTimeValue(value);
   const [parts, setParts] = useState(() => getTimeParts(normalized));
@@ -147,11 +127,13 @@ function TimeWheelColumn({ label, options, value, onChange }) {
   </div>;
 }
 
-function DatePickerDropdown({ name, minDate, required = false }) {
+function DatePickerDropdown({ name, minDate, required = false, value, onChange }) {
   const rootRef = useRef(null);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState(value || '');
   const [open, setOpen] = useState(false);
-  const minimum = new Date(`${minDate}T12:00:00`);
+  useEffect(() => { if (value !== undefined) setSelectedDate(value || ''); }, [value]);
+  const minimumDate = minDate || '1970-01-01';
+  const minimum = new Date(`${minimumDate}T12:00:00`);
   const [viewMonth, setViewMonth] = useState(() => new Date(minimum.getFullYear(), minimum.getMonth(), 1));
   useEffect(() => {
     if (!open) return undefined;
@@ -173,7 +155,7 @@ function DatePickerDropdown({ name, minDate, required = false }) {
   const dateValue = (day) => `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
   return <div className="date-picker-dropdown" ref={rootRef}>
-    <button className="date-picker-trigger" type="button" aria-haspopup="dialog" aria-expanded={open} aria-required={required} onClick={() => setOpen((current) => !current)}>
+    <button className="date-picker-trigger" type="button" aria-haspopup="dialog" aria-expanded={open} aria-required={required} onClick={() => { if (!open) { const shownDate = selectedDate ? new Date(`${selectedDate}T12:00:00`) : minimum; setViewMonth(new Date(shownDate.getFullYear(), shownDate.getMonth(), 1)); } setOpen((current) => !current); }}>
       {selectedLabel || 'Choose a date'} <CalendarDays size={15} />
     </button>
     {open && <div className="date-picker-menu" role="dialog" aria-label="Choose collection date">
@@ -186,7 +168,7 @@ function DatePickerDropdown({ name, minDate, required = false }) {
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <span key={`${day}-${index}`} className="date-picker-weekday">{day}</span>)}
         {calendarCells.map((day, index) => day === null
           ? <span className="date-picker-empty" key={`empty-${index}`} />
-          : <button key={day} type="button" disabled={dateValue(day) < minDate} className={dateValue(day) === selectedDate ? 'selected' : ''} onClick={() => { setSelectedDate(dateValue(day)); setOpen(false); }}>{day}</button>)}
+          : <button key={day} type="button" disabled={dateValue(day) < minimumDate} className={dateValue(day) === selectedDate ? 'selected' : ''} onClick={() => { const nextDate = dateValue(day); setSelectedDate(nextDate); onChange?.(nextDate); setOpen(false); }}>{day}</button>)}
       </div>
     </div>}
     <input type="hidden" name={name} value={selectedDate} />
@@ -443,7 +425,6 @@ function Reviews() {
 
 function CustomOrder() {
   const [done, setDone] = useState(null); const [error,setError]=useState(''); const [sending,setSending]=useState(false);
-  const [preferredTimeError, setPreferredTimeError] = useState('');
   const [hasAllergies, setHasAllergies] = useState('no');
   const [customerSession, setCustomerSession] = useState(getCustomerSession);
   const [selectedPhotos, setSelectedPhotos] = useState([]);
@@ -509,17 +490,9 @@ function CustomOrder() {
     if (files.length > 5) return;
     const collectionDate = data.get('date');
     if (!collectionDate) { setError('Choose a collection date.'); return; }
-    const preferredPickupTime = data.get('pickupTime');
-    if (!preferredPickupTime) { setError('Choose your preferred collection time.'); return; }
-    if (!isPreferredCollectionTimeAllowed(preferredPickupTime)) {
-      setError('');
-      setPreferredTimeError('Choose a time between 10:00 AM and 10:00 PM.');
-      return;
-    }
-    setPreferredTimeError('');
     setSending(true);
     setError('');
-    const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map((photo)=>photo.kind === 'upload' ? photo.file.name : photo.name), status:'Awaiting details', cost:'', preferredPickupTime, pickupTime:'', createdAt:new Date().toISOString() };
+    const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, pickupDate:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map((photo)=>photo.kind === 'upload' ? photo.file.name : photo.name), status:'Awaiting details', cost:'', pickupTime:'', createdAt:new Date().toISOString() };
     try {
       const uploadFiles = await Promise.all(files.map(async (photo) => {
         if (photo.kind === 'upload') return photo.file;
@@ -551,7 +524,7 @@ function CustomOrder() {
   if (done) return <main className="inner-page order-success-page"><section className="order-success-card" role="status"><div className="order-success-icon"><Check size={31} strokeWidth={2.5}/></div><span className="eyebrow">Order request received</span><h1>Your idea is on its way to Sukkar.</h1><p>Thank you, {done.firstName}. We’ve received your custom order request. Sukkar will email you about the price before making your treat.</p><div className="order-success-reference"><span>Order reference</span><strong>{done.id}</strong></div>{done.emailError ? <p className="order-success-email-error" role="alert">Your request is saved, but the confirmation email could not be sent. You can still follow your order below.</p> : <p className="order-success-email-note">A confirmation email has been sent to you.</p>}<div className="order-success-actions"><Link className="button button-outline" to="/gallery">Continue shopping <ArrowRight size={16}/></Link><Link className="button" to="/my-orders">View my order <ArrowRight size={16}/></Link></div></section></main>;
   return <main className="inner-page order-page"><PageIntro eyebrow="A treat that starts with your idea" title={<>Let’s make it <em>yours.</em></>} text="Tell us what you’re picturing and when you’d like to collect it. Add up to five photos from your device or the Sukkar gallery."/><div className="order-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid">
     <label>First name<input name="firstName" required autoComplete="given-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ')[0] || ''} placeholder="Your first name"/></label><label>Last name<input name="lastName" required autoComplete="family-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''} placeholder="Your last name"/></label><PhoneNumberField/><label>Email address<input name="email" type="email" required autoComplete="email" defaultValue={customerSession.user?.email || ''} placeholder="you@example.com"/></label>
-    <div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div><div className="time-field-label"><span>Preferred collection time</span><PreferredTimeWheelPicker name="pickupTime" invalid={Boolean(preferredTimeError)} onChange={(value) => setPreferredTimeError(isPreferredCollectionTimeAllowed(value) ? '' : 'Choose a time between 10:00 AM and 10:00 PM.')}/>{preferredTimeError && <small id="preferred-time-error" className="time-field-error" role="alert">{preferredTimeError}</small>}{!preferredTimeError && <small className="time-field-note">Choose a time between 10:00 AM and 10:00 PM.</small>}</div>
+    <div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div>
     <label className="full-field">Describe your idea<textarea name="description" required minLength="10" maxLength="1500" rows="5" placeholder="Chocolate and filling, colours, message, size or occasion — share anything that helps us imagine it…"/></label><fieldset className="full-field allergy-field"><legend>Any allergies or dietary requirements?</legend><select name="hasAllergies" value={hasAllergies} onChange={(event) => setHasAllergies(event.target.value)}><option value="no">No</option><option value="yes">Yes</option></select>{hasAllergies === 'yes' && <label className="allergy-details">Please tell us about any allergies or dietary requirements<input name="allergies" required placeholder="e.g. nuts, dairy, gluten"/></label>}</fieldset>
     <fieldset className="full-field photo-upload-field"><legend>Reference photos <span className="optional">({selectedPhotos.length} of 5 selected)</span></legend><div className="photo-source-actions"><label className={`button button-outline photo-source-label${selectedPhotos.length >= 5 ? ' disabled' : ''}`}>Choose from your device<input type="file" accept="image/*" multiple disabled={selectedPhotos.length >= 5} onChange={addDevicePhotos}/></label><label className={`button button-outline photo-source-label${selectedPhotos.length >= 5 ? ' disabled' : ''}`}>Take a photo<input type="file" accept="image/*" capture="environment" disabled={selectedPhotos.length >= 5} onChange={addDevicePhotos}/></label><button className="button button-outline" type="button" onClick={() => { setActiveGalleryCategory('All treats'); setShowPhotoGallery(true); }}>Choose from Sukkar gallery</button></div><small>{supabaseReady ? 'Device and gallery photos are uploaded privately with your request.' : 'Preview photos stay in this browser and are not uploaded.'}</small>{photoSelectionError && <small className="error-message" role="alert">{photoSelectionError}</small>}{!!selectedPhotos.length && <div className="photo-preview-grid">{selectedPhotos.map((photo) => <figure className="photo-preview-item" key={photo.id}><img src={photo.kind === 'website-gallery' ? photo.image : uploadPreviewUrls[photo.id]} alt={photo.name}/><button type="button" className="photo-remove-button" aria-label={`Remove ${photo.name}`} onClick={() => removeSelectedPhoto(photo.id)}><X size={15}/></button><figcaption title={photo.name}>{photo.name}</figcaption></figure>)}</div>}</fieldset>
     <button className="button" type="submit" disabled={sending}>{sending?'Sending request…':'Send order request'} <ArrowRight size={16}/></button><p className="form-footnote">{supabaseReady ? 'Your request and photos are saved securely. You’ll receive an email and Sukkar will email you about the price before starting.' : 'Preview order saved only in this browser. Email sending requires the connected website setup.'}</p></form>{error&&<p className="error-message">{error}</p>}{done&&<div className="success-card"><span>✓</span><div><strong>Your request was saved — thank you!</strong><p>Reference <b>{done.id}</b>. {done.emailError ? 'The order is saved, but its email could not be sent.' : 'A confirmation email has been sent to you, and Sukkar has received your request.'}</p>{done.emailError&&<p className="error-message" role="alert">{done.emailError}</p>}<Link to="/my-orders">View my order <ArrowRight size={15}/></Link></div></div>}</section><aside className="order-aside"><OrderNote/><div className="aside-steps"><span className="eyebrow">A lovely little process</span><ol><li><span>01</span><div><strong>Tell us what you love</strong><p>Share your idea, date and inspiration.</p></div></li><li><span>02</span><div><strong>Agree the details</strong><p>We’ll confirm the price together by email.</p></div></li><li><span>03</span><div><strong>Collect and enjoy</strong><p>Pay when you collect your finished order.</p></div></li></ol></div></aside></div>{showPhotoGallery && <div className="photo-gallery-overlay" role="dialog" aria-modal="true" aria-label="Choose photos from the Sukkar gallery" onClick={() => setShowPhotoGallery(false)}><section className="photo-gallery-dialog" onClick={(event) => event.stopPropagation()}><button type="button" className="lightbox-close photo-gallery-close" aria-label="Close gallery" onClick={() => setShowPhotoGallery(false)}><X/></button><span className="eyebrow">Add a reference</span><h2>Choose from the <em>Sukkar gallery.</em></h2><p>Select up to {5 - selectedPhotos.length} more photo{5 - selectedPhotos.length === 1 ? '' : 's'} from the website gallery.</p><div className="filter-row photo-gallery-filters">{galleryCategories.map((category) => <button key={category} type="button" className={activeGalleryCategory === category ? 'filter-chip active' : 'filter-chip'} onClick={() => setActiveGalleryCategory(category)}>{category}</button>)}</div><div className="photo-gallery-grid">{visibleWebsiteGalleryPhotos.map((item) => { const isSelected = selectedPhotos.some((photo) => photo.kind === 'website-gallery' && photo.id === item.id); const isFull = !isSelected && selectedPhotos.length >= 5; return <button key={item.id} type="button" className={`photo-gallery-option${isSelected ? ' selected' : ''}`} aria-pressed={isSelected} disabled={isFull} onClick={() => toggleWebsiteGalleryPhoto(item)}><img src={item.image} alt=""/><span>{item.name || 'Sukkar creation'}</span>{isSelected && <small>Selected</small>}</button>; })}</div><div className="photo-gallery-dialog-footer"><span>{selectedPhotos.length} of 5 photos selected</span><button type="button" className="button" onClick={() => setShowPhotoGallery(false)}>Done</button></div></section></div>}</main>;
@@ -778,7 +751,7 @@ function MyOrders() {
         {orders.length ? orders.map((order) => <article className="order-card" id={`order-${order.id}`} key={order.id}>
           <div className="order-card-top"><span className="eyebrow">{order.id}</span>{['Cancelled', 'Collected'].includes(order.status) && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeFinalOrder(order)} aria-label={`Remove ${order.status.toLowerCase()} order from My orders`} title={`Remove ${order.status.toLowerCase()} order from My orders`}>{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}</div>
           <h2>Made for {order.name}</h2><p>{order.description}</p>
-          <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span>Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
+          <div className="order-meta"><span>Collection date<strong>{formatDate(order.status === 'Ready for collection' ? (order.pickupDate || order.date) : order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span>Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
           <OrderStatusJourney status={order.status} />
           {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
           {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
@@ -885,10 +858,11 @@ function Admin() {
 
   const markReady = async (order) => {
     const collectionTime = normalizeTimeValue(order.pickupTime);
-    if (!order.cost || !collectionTime) return;
+    const collectionDate = order.pickupDate || order.date;
+    if (!order.cost || !collectionDate || !collectionTime) return;
     try {
-      if (supabaseReady && session) await updateRemoteOrder(order.id, { status: 'Ready for collection', pickupTime: collectionTime }, session);
-      const next = orders.map((item) => item.id === order.id ? { ...item, pickupTime: collectionTime, status: 'Ready for collection' } : item);
+      if (supabaseReady && session) await updateRemoteOrder(order.id, { status: 'Ready for collection', pickupDate: collectionDate, pickupTime: collectionTime }, session);
+      const next = orders.map((item) => item.id === order.id ? { ...item, pickupDate: collectionDate, pickupTime: collectionTime, status: 'Ready for collection' } : item);
       setOrders(next);
       if (!supabaseReady) write(STORAGE.orders, next);
       try { await sendSiteEmail('admin_ready_collection', { orderId: order.id }, session); }
@@ -1198,9 +1172,8 @@ function Admin() {
                   <h3>{order.name}</h3><p>{order.description}</p>
                   <div className="order-meta">
                     <span>Phone<strong>{order.phone}</strong></span><span>Email<strong>{order.email}</strong></span>
-                    <span>Collection<strong>{formatDate(order.date)}</strong></span><span>Allergies<strong>{order.allergies || 'None noted'}</strong></span>
+                    <span>Customer requested date<strong>{formatDate(order.date)}</strong></span>{order.status === 'Ready for collection' && <span>Collection date<strong>{formatDate(order.pickupDate || order.date)}</strong></span>}<span>Allergies<strong>{order.allergies || 'None noted'}</strong></span>
                     <span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>
-                    <span>Customer preferred time<strong>{order.preferredPickupTime || 'Not provided'}</strong></span>
                     <span>Photos<strong>{supabaseReady ? <OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} session={session} /> : order.photoPreviews?.length ? <OrderPhotos previews={order.photoPreviews} /> : order.photoNames?.join(', ') || 'None attached'}</strong></span>
                   </div>
                   <OrderStatusJourney status={order.status} admin collectionTime={order.pickupTime} />
@@ -1217,8 +1190,9 @@ function Admin() {
                   </>}
                   {order.status === 'Awaiting price agreement' && <p className="admin-price-waiting">Waiting for customer response to <strong>{formatPrice(order.cost)}</strong>.</p>}
                   {order.status === 'Preparing' && <>
-                    <div className="collection-time-field"><span>Collection time to send</span><PreferredTimeWheelPicker value={order.pickupTime} label="collection time" onChange={(value) => update(order.id, 'pickupTime', value)} /></div>
-                    <button className="button" disabled={!normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
+                    <div className="collection-time-field"><span>Collection date to send</span><DatePickerDropdown value={order.pickupDate || order.date} minDate={new Date().toISOString().slice(0,10)} onChange={(value) => update(order.id, 'pickupDate', value)} /></div>
+                    <div className="collection-time-field"><span>Collection time to send</span><CollectionTimePicker value={order.pickupTime} onChange={(value) => update(order.id, 'pickupTime', value)} /></div>
+                    <button className="button" disabled={!(order.pickupDate || order.date) || !normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
                   </>}
                   {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
                   {order.status === 'Rejected' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Remove declined order <X size={14} /></button>}

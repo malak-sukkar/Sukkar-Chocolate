@@ -8,16 +8,11 @@ alter table public.orders
 alter table public.orders
   add column if not exists customer_last_name text;
 alter table public.orders
-  add column if not exists preferred_collection_time text;
+  add column if not exists confirmed_collection_date date;
 alter table public.orders
   add column if not exists customer_hidden boolean not null default false;
 alter table public.orders
   add column if not exists admin_hidden boolean not null default false;
-update public.orders
-set preferred_collection_time = collection_time,
-    collection_time = null
-where preferred_collection_time is null
-  and status in ('Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined', 'Preparing');
 alter table public.orders drop constraint if exists orders_status_check;
 alter table public.orders
   add constraint orders_status_check
@@ -31,10 +26,10 @@ create policy "Customers can submit their own order requests" on public.orders
   with check (
     customer_user_id = auth.uid()
     and collection_date >= current_date + 3
+    and confirmed_collection_date is null
     and status = 'Awaiting details'
     and agreed_cost is null
     and collection_time is null
-    and (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$')
     and case when jsonb_typeof(photo_paths) = 'array' then
       jsonb_array_length(photo_paths) <= 5
       and not exists (

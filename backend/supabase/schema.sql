@@ -10,10 +10,10 @@ create table if not exists public.orders (
   email text not null,
   description text not null,
   collection_date date not null,
+  confirmed_collection_date date,
   allergies text,
   photo_paths jsonb not null default '[]'::jsonb,
   agreed_cost text,
-  preferred_collection_time text,
   collection_time text,
   status text not null default 'Awaiting details' check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection', 'Cancelled', 'Collected')),
   customer_hidden boolean not null default false,
@@ -24,7 +24,7 @@ create table if not exists public.orders (
 alter table public.orders add column if not exists customer_user_id uuid references auth.users(id);
 alter table public.orders add column if not exists customer_first_name text;
 alter table public.orders add column if not exists customer_last_name text;
-alter table public.orders add column if not exists preferred_collection_time text;
+alter table public.orders add column if not exists confirmed_collection_date date;
 alter table public.orders enable row level security;
 drop policy if exists "Visitors can submit order requests" on public.orders;
 drop policy if exists "Customers can submit their own order requests" on public.orders;
@@ -35,7 +35,7 @@ with check (
   and status = 'Awaiting details'
   and agreed_cost is null
   and collection_time is null
-  and (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$')
+  and confirmed_collection_date is null
   and case when jsonb_typeof(photo_paths) = 'array' then
     jsonb_array_length(photo_paths) <= 5
     and not exists (
@@ -235,10 +235,6 @@ end;
 $$;
 revoke all on function public.consume_rate_limit(text, integer, integer) from public, anon, authenticated;
 grant execute on function public.consume_rate_limit(text, integer, integer) to service_role;
-
-alter table public.orders drop constraint if exists orders_preferred_collection_time_hours_check;
-alter table public.orders add constraint orders_preferred_collection_time_hours_check
-  check (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$') not valid;
 
 create index if not exists orders_customer_user_id_idx on public.orders(customer_user_id);
 create index if not exists gallery_items_category_id_idx on public.gallery_items(category_id);

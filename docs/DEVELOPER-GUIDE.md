@@ -117,13 +117,13 @@ See `backend/supabase/schema.sql` and `backend/supabase/customer-auth-migration.
 
 ### Custom order lifecycle
 
-1. The customer signs in, enters first and last name, contact information, idea, collection date, preferred time, allergy details, and optionally up to five reference photos.
-2. The form requires a collection date at least three days ahead and a preferred time from 10:00 AM through 10:00 PM. The form includes the compact hour/minute/AM-PM picker and an error for a time outside the allowed window.
+1. The customer signs in, enters first and last name, contact information, idea, requested collection date, allergy details, and optionally up to five reference photos.
+2. The form requires a requested collection date at least three days ahead. The customer does not choose a collection time.
 3. With Supabase connected, photos upload to the private bucket and the order row is created with `Awaiting details`. The function emails the Admin Dashboard owner with request details and temporary photo links, and emails the customer a receipt.
 4. The admin sees the request and photos, then accepts or rejects it. Acceptance alone sends no email. Rejection sends the customer an email.
 5. The admin proposes a price. The customer gets an email with a **View your order** button and a plain-text URL to My Orders, where they can accept or reject the price. The response is stored and emails the admin.
-6. On acceptance, status advances to `Preparing`. The admin enters a collection time using the Admin Dashboard picker; status becomes `Ready for collection`, and the customer receives the time by email. My Orders shows both the customer's preferred time and confirmed collection time.
-7. **Mark as collected** removes the order from the active lists by deleting the order row and filtering it from the local list. This is permanent in the current implementation; there is no separate collected-order archive.
+6. On acceptance, status advances to `Preparing`. The admin chooses a collection date and time. The date defaults to the customer's requested date but can be changed. Status becomes `Ready for collection`, and the customer sees the confirmed date and time in My Orders and by email.
+7. **Mark as collected** changes the order status to `Collected`. The customer and admin can each remove the completed order from their own list independently.
 
 The customer and admin see step journeys tailored to their role. The database status is shared, while journey labels and actions differ.
 
