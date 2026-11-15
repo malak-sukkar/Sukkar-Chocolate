@@ -17,7 +17,7 @@ where preferred_collection_time is null
 alter table public.orders drop constraint if exists orders_status_check;
 alter table public.orders
   add constraint orders_status_check
-  check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection'));
+  check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection', 'Cancelled'));
 
 alter table public.orders enable row level security;
 drop policy if exists "Visitors can submit order requests" on public.orders;

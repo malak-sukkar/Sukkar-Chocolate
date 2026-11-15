@@ -173,6 +173,12 @@ export async function respondToPrice(orderId, accept, session) {
   return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'respond_to_price', orderId, accept }, token: session.access_token });
 }
 
+export async function cancelCustomerOrder(orderId, session) {
+  session = await freshCustomerSession(session);
+  if (!session?.access_token) throw new Error('Please sign in again before cancelling your order.');
+  return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'customer_cancel_order', orderId }, token: session.access_token });
+}
+
 export async function listRemoteOrders(session) {
   session = await freshSession(session);
   const rows = await request('/rest/v1/orders?select=*&status=neq.collected&order=created_at.desc', { token: session.access_token });

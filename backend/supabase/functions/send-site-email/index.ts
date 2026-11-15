@@ -175,6 +175,21 @@ Deno.serve(async (request) => {
       return response({ status: data.status });
     }
 
+    if (type === 'customer_cancel_order') {
+      if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
+      const cancellableStatuses = ['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'];
+      const { data, error } = await adminClient.from('orders')
+        .update({ status: 'Cancelled' })
+        .eq('id', order.id)
+        .eq('customer_user_id', user.id)
+        .in('status', cancellableStatuses)
+        .select('status')
+        .maybeSingle();
+      if (error) throw new Error('We could not cancel your order. Please try again.');
+      if (!data) return response({ error: 'This order can no longer be cancelled because preparation may have started.' }, 409);
+      return response({ status: data.status });
+    }
+
     if (type === 'order_submitted') {
       if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
       if (order.status !== 'Awaiting details' || order.agreed_cost || order.collection_time) return response({ error: 'This order is no longer waiting for its first confirmation email.' }, 409);

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, UserPlus, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { cancelCustomerOrder, createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -562,6 +562,7 @@ function Contact() {
 }
 
 function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
+  if (status === 'Cancelled') return <p className="order-cancelled-status" role="status">{admin ? 'Cancelled by customer' : 'You cancelled this order'}</p>;
   const declined = status === 'Price declined';
   const rejected = status === 'Rejected';
   const steps = admin ? ['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price agreed', 'Preparing', 'Ready for collection'] : ['Request received', 'Accepted', 'Price proposed', 'Price agreed', 'Preparing', 'Ready for collection'];
@@ -650,6 +651,7 @@ function MyOrders() {
   const location = useLocation();
   const [orders,setOrders]=useState(()=>normalizeOrderTimes(read(STORAGE.orders,[])));
   const [respondingOrder,setRespondingOrder]=useState(null);
+  const [cancellingOrder,setCancellingOrder]=useState(null);
   const [responseError,setResponseError]=useState('');
   const [questionOrder,setQuestionOrder]=useState(null);
   const [questionMessage,setQuestionMessage]=useState('');
@@ -726,6 +728,21 @@ function MyOrders() {
       setRespondingOrder(null);
     }
   };
+  const cancel = async (order) => {
+    if (!window.confirm('Are you sure you want to cancel this order? You can cancel only before Sukkar starts preparing it.')) return;
+    setCancellingOrder(order.id);
+    setResponseError('');
+    try {
+      if (supabaseReady) await cancelCustomerOrder(order.id, getCustomerSession());
+      const next = orders.map((item) => item.id === order.id ? { ...item, status: 'Cancelled' } : item);
+      setOrders(next);
+      write(STORAGE.orders, next);
+    } catch (cause) {
+      setResponseError(cause.message || 'We could not cancel this order. Please try again.');
+    } finally {
+      setCancellingOrder(null);
+    }
+  };
   const askAboutOrder = async (order) => {
     if (!window.confirm('Are you sure you want to send an email to ask about your order?')) return;
     setQuestionOrder(order.id); setQuestionMessage(''); setResponseError('');
@@ -746,7 +763,10 @@ function MyOrders() {
           <OrderStatusJourney status={order.status} />
           {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
           {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
-          <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>
+          <div className="customer-order-actions">
+            {['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'].includes(order.status) && <button className="button button-outline" type="button" disabled={cancellingOrder === order.id} onClick={() => cancel(order)}>{cancellingOrder === order.id ? 'Cancelling…' : 'Cancel order'} <X size={15}/></button>}
+            {!['Cancelled', 'Rejected'].includes(order.status) && <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>}
+          </div>
         </article>) : <div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}
       </div>
     </main>
