@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, UserPlus, UserRound, X } from 'lucide-react';
+import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, Trash2, UserPlus, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { cancelCustomerOrder, createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { cancelCustomerOrder, createRemoteOrder, deleteCancelledOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -654,6 +654,7 @@ function MyOrders() {
   const [orders,setOrders]=useState(()=>normalizeOrderTimes(read(STORAGE.orders,[])));
   const [respondingOrder,setRespondingOrder]=useState(null);
   const [cancellingOrder,setCancellingOrder]=useState(null);
+  const [removingOrder,setRemovingOrder]=useState(null);
   const [responseError,setResponseError]=useState('');
   const [questionOrder,setQuestionOrder]=useState(null);
   const [questionMessage,setQuestionMessage]=useState('');
@@ -745,6 +746,21 @@ function MyOrders() {
       setCancellingOrder(null);
     }
   };
+  const removeCancelledOrder = async (order) => {
+    if (!window.confirm('Permanently remove this cancelled order from your order list?')) return;
+    setRemovingOrder(order.id);
+    setResponseError('');
+    try {
+      if (supabaseReady) await deleteCancelledOrder(order.id, getCustomerSession());
+      const next = orders.filter((item) => item.id !== order.id);
+      setOrders(next);
+      write(STORAGE.orders, next);
+    } catch (cause) {
+      setResponseError(cause.message || 'We could not remove this cancelled order. Please try again.');
+    } finally {
+      setRemovingOrder(null);
+    }
+  };
   const askAboutOrder = async (order) => {
     if (!window.confirm('Are you sure you want to send an email to ask about your order?')) return;
     setQuestionOrder(order.id); setQuestionMessage(''); setResponseError('');
@@ -768,6 +784,7 @@ function MyOrders() {
           {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
           <div className="customer-order-actions">
             {['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'].includes(order.status) && <div className="customer-cancel-group"><button className="button button-outline" type="button" disabled={cancellingOrder === order.id} onClick={() => cancel(order)}>{cancellingOrder === order.id ? 'Cancelling…' : 'Cancel order'} <X size={15}/></button><small>You can cancel only before preparation begins.</small></div>}
+            {order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeCancelledOrder(order)} aria-label="Delete cancelled order" title="Delete cancelled order">{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}
             {!['Cancelled', 'Rejected'].includes(order.status) && <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>}
           </div>
         </article>) : <div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}
@@ -902,6 +919,18 @@ function Admin() {
       if (!supabaseReady) write(STORAGE.orders, next);
     } catch {
       setLoginError('Could not delete the order. Please try again.');
+    }
+  };
+
+  const removeCancelledOrder = async (id) => {
+    if (!window.confirm('Permanently delete this cancelled order?')) return;
+    try {
+      if (supabaseReady && session) await deleteCancelledOrder(id, session);
+      const next = orders.filter((order) => order.id !== id);
+      setOrders(next);
+      if (!supabaseReady) write(STORAGE.orders, next);
+    } catch (cause) {
+      setLoginError(cause.message || 'Could not delete the cancelled order. Please try again.');
     }
   };
 
@@ -1186,6 +1215,7 @@ function Admin() {
                   </>}
                   {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
                   {order.status === 'Rejected' && <button className="collected-button" onClick={() => markCollected(order.id)}>Remove declined order <X size={14} /></button>}
+                  {order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" onClick={() => removeCancelledOrder(order.id)} aria-label="Delete cancelled order" title="Delete cancelled order"><Trash2 size={17}/></button>}
                 </div>
               </article>
             )) : <div className="empty-state">New customer requests will appear here.</div>}

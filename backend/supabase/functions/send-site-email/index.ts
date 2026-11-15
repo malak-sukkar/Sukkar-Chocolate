@@ -157,7 +157,7 @@ Deno.serve(async (request) => {
     const order = orderId ? await getOrder(orderId) : null;
     const isAdmin = user.app_metadata?.role === 'admin';
     if (type.startsWith('admin_') && !isAdmin) return response({ error: 'Only the Sukkar admin can send this message.' }, 403);
-    if (!type.startsWith('admin_') && order && order.customer_user_id !== user.id) return response({ error: 'You can only message Sukkar about your own order.' }, 403);
+    if (!type.startsWith('admin_') && type !== 'delete_cancelled_order' && order && order.customer_user_id !== user.id) return response({ error: 'You can only message Sukkar about your own order.' }, 403);
 
     if (type === 'respond_to_price') {
       if (!order || order.customer_user_id !== user.id) return response({ error: 'Order not found.' }, 404);
@@ -188,6 +188,18 @@ Deno.serve(async (request) => {
       if (error) throw new Error('We could not cancel your order. Please try again.');
       if (!data) return response({ error: 'This order can no longer be cancelled because preparation may have started.' }, 409);
       return response({ status: data.status });
+    }
+
+    if (type === 'delete_cancelled_order') {
+      if (!order) return response({ error: 'Order not found.' }, 404);
+      if (!isAdmin && order.customer_user_id !== user.id) return response({ error: 'You can only remove your own cancelled orders.' }, 403);
+      if (order.status !== 'Cancelled') return response({ error: 'Only cancelled orders can be removed this way.' }, 409);
+      let deletion = adminClient.from('orders').delete().eq('id', order.id).eq('status', 'Cancelled');
+      if (!isAdmin) deletion = deletion.eq('customer_user_id', user.id);
+      const { data, error } = await deletion.select('id').maybeSingle();
+      if (error) throw new Error('We could not remove this cancelled order. Please try again.');
+      if (!data) return response({ error: 'This order is no longer available to remove.' }, 409);
+      return response({ ok: true });
     }
 
     if (type === 'order_submitted') {
