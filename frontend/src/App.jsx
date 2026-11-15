@@ -44,6 +44,10 @@ const formatPrice = (value) => {
   if (!price) return '';
   return /\bSYP$/i.test(price) ? price : `${price} SYP`;
 };
+const currentOrderStatusLabel = (status, admin = false) => {
+  if (admin) return status;
+  return ({ 'Awaiting details': 'Request received', 'Awaiting price agreement': 'Price proposed' })[status] || status;
+};
 
 function CollectionTimePicker({ name, value = '', onChange, label = 'collection time', invalid = false }) {
   const rootRef = useRef(null);
@@ -751,23 +755,31 @@ function MyOrders() {
   };
   return (
     <main className="inner-page">
-      <PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady ? 'Orders submitted on this browser will appear here, with updates from Sukkar.' : 'Orders submitted on this browser will appear here. We’ll agree the price and details together by email.'} />
+      <PageIntro eyebrow="Your sweet requests" title={<>A little order <em>update.</em></>} text={supabaseReady ? 'Track your orders and see the latest updates from Sukkar.' : 'Track your orders here. We’ll agree the price and details together by email.'} />
       {responseError && <p className="error-message" role="alert">{responseError}</p>}
       {questionMessage && <p className="success-message" role="status">{questionMessage}</p>}
       <div className="my-orders">
         {orders.length ? orders.map((order) => <article className="order-card" id={`order-${order.id}`} key={order.id}>
-          <div className="order-card-top"><span className="eyebrow">{order.id}</span>{['Cancelled', 'Collected'].includes(order.status) && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeFinalOrder(order)} aria-label={`Remove ${order.status.toLowerCase()} order from My orders`} title={`Remove ${order.status.toLowerCase()} order from My orders`}>{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}</div>
-          <h2>Made for {order.name}</h2><p>{order.description}</p>
-          <div className="order-meta"><span>Requested ready-by date<strong>{formatDate(order.date)}</strong></span><span>Requested ready-by time<strong>{formatCollectionTime(order.preferredPickupTime)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span><span>Allergies<strong>{order.allergies || 'None noted'}</strong></span>{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span className="order-photos-meta">Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
-          {order.status !== 'Collected' && <OrderStatusJourney status={order.status} />}
-          {['Ready for collection', 'Collected'].includes(order.status) && (order.pickupDate || order.pickupTime) && <div className="order-schedule-box"><span className="order-schedule-title">Collection schedule</span><span>Collection date<strong>{formatDate(order.pickupDate || order.date)}</strong></span><span>Collection time<strong>{formatCollectionTime(order.pickupTime) || 'Not set'}</strong></span></div>}
-          {order.status === 'Collected' && <OrderStatusJourney status={order.status} />}
-          {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
-          {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
-          <div className="customer-order-actions">
-            {['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'].includes(order.status) && <div className="customer-cancel-group"><button className="button button-outline" type="button" disabled={cancellingOrder === order.id} onClick={() => cancel(order)}>{cancellingOrder === order.id ? 'Cancelling…' : 'Cancel order'} <X size={15}/></button><small>You can cancel only before preparation begins.</small></div>}
-            {order.status === 'Collected' ? <Link className="text-link" to="/reviews#write-review">Write a review <ArrowRight size={15}/></Link> : !['Cancelled', 'Rejected'].includes(order.status) && <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>}
-          </div>
+          <details className="order-details">
+            <summary className="order-summary">
+              <span className="order-summary-reference"><small>Order reference</small><strong>{order.id}</strong><small>Sent {new Date(order.createdAt || Date.now()).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
+              <span className="order-summary-side"><span className="order-summary-name">{order.name}</span><span className={`order-summary-status status-pill${order.status === 'Collected' ? ' collected' : order.status === 'Cancelled' || order.status === 'Rejected' ? ' cancelled' : ''}`}>{currentOrderStatusLabel(order.status)}</span><span className="order-summary-toggle"><span>Order details</span><ChevronDown size={16}/></span></span>
+            </summary>
+            <div className="order-details-body">
+              {['Cancelled', 'Collected'].includes(order.status) && <div className="order-card-top"><button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeFinalOrder(order)} aria-label={`Remove ${order.status.toLowerCase()} order from My orders`} title={`Remove ${order.status.toLowerCase()} order from My orders`}>{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button></div>}
+              <p>{order.description}</p>
+              <div className="order-meta"><span>Requested ready-by date<strong>{formatDate(order.date)}</strong></span><span>Requested ready-by time<strong>{formatCollectionTime(order.preferredPickupTime)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span><span className="order-allergies-meta">Allergies<strong>{order.allergies || 'None noted'}</strong></span>{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span className="order-photos-meta">Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
+              {order.status !== 'Collected' && <OrderStatusJourney status={order.status} />}
+              {['Ready for collection', 'Collected'].includes(order.status) && (order.pickupDate || order.pickupTime) && <div className="order-schedule-box"><span className="order-schedule-title">Collection schedule</span><span>Collection date<strong>{formatDate(order.pickupDate || order.date)}</strong></span><span>Collection time<strong>{formatCollectionTime(order.pickupTime) || 'Not set'}</strong></span></div>}
+              {order.status === 'Collected' && <OrderStatusJourney status={order.status} />}
+              {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
+              {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
+              <div className="customer-order-actions">
+                {['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'].includes(order.status) && <div className="customer-cancel-group"><button className="button button-outline" type="button" disabled={cancellingOrder === order.id} onClick={() => cancel(order)}>{cancellingOrder === order.id ? 'Cancelling…' : 'Cancel order'} <X size={15}/></button><small>You can cancel only before preparation begins.</small></div>}
+                {order.status === 'Collected' ? <Link className="text-link" to="/reviews#write-review">Write a review <ArrowRight size={15}/></Link> : !['Cancelled', 'Rejected'].includes(order.status) && <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>}
+              </div>
+            </div>
+          </details>
         </article>) : <div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}
       </div>
     </main>
@@ -1176,38 +1188,46 @@ function Admin() {
             <div id="orders-content" className="admin-section-content" hidden={openAdminSection !== 'orders'}>
             {orders.length ? orders.map((order) => (
               <article className={`admin-order${['Cancelled', 'Collected'].includes(order.status) ? ' removable-admin-order' : ''}`} key={order.id}>
-                <div className="admin-order-info">
-                  <div className="order-card-top"><span className="eyebrow">{order.id} · {new Date(order.createdAt || Date.now()).toLocaleDateString()}</span>{['Cancelled', 'Collected'].includes(order.status) && <button className="cancelled-order-delete" type="button" onClick={() => removeFinalOrder(order.id)} aria-label={`Remove ${order.status.toLowerCase()} order from Admin Dashboard`} title={`Remove ${order.status.toLowerCase()} order from Admin Dashboard`}><Trash2 size={17}/></button>}</div>
-                  <h3>{order.name}</h3><p>{order.description}</p>
-                  <div className="order-meta">
-                    <span>Phone<strong>{order.phone}</strong></span><span>Email<strong>{order.email}</strong></span>
-                    <span>Customer requested ready-by date<strong>{formatDate(order.date)}</strong></span><span>Customer requested ready-by time<strong>{formatCollectionTime(order.preferredPickupTime) || 'Not provided'}</strong></span><span>Allergies<strong>{order.allergies || 'None noted'}</strong></span>
-                    <span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>
-                    <span className="admin-photo-meta">Photos<strong>{supabaseReady ? <OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} session={session} /> : order.photoPreviews?.length ? <OrderPhotos previews={order.photoPreviews} /> : order.photoNames?.join(', ') || 'None attached'}</strong></span>
+                <details className="admin-order-details">
+                  <summary className="order-summary">
+                    <span className="order-summary-reference"><small>Order reference</small><strong>{order.id}</strong><small>Sent {new Date(order.createdAt || Date.now()).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</small></span>
+                    <span className="order-summary-side"><span className="order-summary-name">{order.name}</span><span className={`order-summary-status status-pill${order.status === 'Collected' ? ' collected' : order.status === 'Cancelled' || order.status === 'Rejected' ? ' cancelled' : ''}`}>{currentOrderStatusLabel(order.status, true)}</span><span className="order-summary-toggle"><span>Order details</span><ChevronDown size={16}/></span></span>
+                  </summary>
+                  <div className="admin-order-expanded">
+                    <div className="admin-order-info">
+                      {['Cancelled', 'Collected'].includes(order.status) && <div className="order-card-top"><button className="cancelled-order-delete" type="button" onClick={() => removeFinalOrder(order.id)} aria-label={`Remove ${order.status.toLowerCase()} order from Admin Dashboard`} title={`Remove ${order.status.toLowerCase()} order from Admin Dashboard`}><Trash2 size={17}/></button></div>}
+                      <p>{order.description}</p>
+                      <div className="order-meta">
+                        <span>Phone<strong>{order.phone}</strong></span><span>Email<strong>{order.email}</strong></span>
+                        <span>Customer requested ready-by date<strong>{formatDate(order.date)}</strong></span><span>Customer requested ready-by time<strong>{formatCollectionTime(order.preferredPickupTime) || 'Not provided'}</strong></span>
+                        <span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span><span className="order-allergies-meta">Allergies<strong>{order.allergies || 'None noted'}</strong></span>
+                        <span className="admin-photo-meta">Photos<strong>{supabaseReady ? <OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} session={session} /> : order.photoPreviews?.length ? <OrderPhotos previews={order.photoPreviews} /> : order.photoNames?.join(', ') || 'None attached'}</strong></span>
+                      </div>
+                      {order.status !== 'Collected' && <OrderStatusJourney status={order.status} admin />}
+                      {['Ready for collection', 'Collected'].includes(order.status) && (order.pickupDate || order.pickupTime) && <div className="order-schedule-box"><span className="order-schedule-title">Collection schedule</span><span>Collection date<strong>{formatDate(order.pickupDate || order.date)}</strong></span><span>Collection time<strong>{formatCollectionTime(order.pickupTime) || 'Not set'}</strong></span></div>}
+                      {order.status === 'Collected' && <OrderStatusJourney status={order.status} admin />}
+                    </div>
+                    <div className="admin-order-actions">
+                      {order.status === 'Awaiting details' && <>
+                        <button className="button" onClick={() => acceptOrder(order)}>Accept order <ArrowRight size={15} /></button>
+                        <button className="collected-button" onClick={() => rejectOrder(order)}>Reject order</button>
+                      </>}
+                      {(order.status === 'Accepted' || order.status === 'Price declined') && <>
+                        <label>Price to agree<div className="price-input-wrap"><input value={String(order.cost || '').replace(/\s*SYP$/i, '')} onChange={(event) => update(order.id, 'cost', event.target.value)} onBlur={(event) => update(order.id, 'cost', event.target.value, true)} placeholder="e.g. 25,000" /><span>SYP</span></div></label>
+                        <button className="button" disabled={!order.cost} onClick={() => sendPriceProposal(order)}>Email price proposal <Mail size={15} /></button>
+                        {order.status === 'Price declined' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Delete declined order <X size={14} /></button>}
+                      </>}
+                      {order.status === 'Awaiting price agreement' && <p className="admin-price-waiting">Waiting for customer response to <strong>{formatPrice(order.cost)}</strong>.</p>}
+                      {order.status === 'Preparing' && <>
+                        <div className="collection-time-field"><span>Collection date to send</span><DatePickerDropdown value={order.pickupDate || order.date} minDate={new Date().toISOString().slice(0,10)} onChange={(value) => update(order.id, 'pickupDate', value)} /></div>
+                        <div className="collection-time-field"><span>Collection time to send</span><CollectionTimePicker value={order.pickupTime} onChange={(value) => update(order.id, 'pickupTime', value)} /></div>
+                        <button className="button" disabled={!(order.pickupDate || order.date) || !normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
+                      </>}
+                      {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
+                      {order.status === 'Rejected' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Remove declined order <X size={14} /></button>}
+                    </div>
                   </div>
-                  {order.status !== 'Collected' && <OrderStatusJourney status={order.status} admin />}
-                  {['Ready for collection', 'Collected'].includes(order.status) && (order.pickupDate || order.pickupTime) && <div className="order-schedule-box"><span className="order-schedule-title">Collection schedule</span><span>Collection date<strong>{formatDate(order.pickupDate || order.date)}</strong></span><span>Collection time<strong>{formatCollectionTime(order.pickupTime) || 'Not set'}</strong></span></div>}
-                  {order.status === 'Collected' && <OrderStatusJourney status={order.status} admin />}
-                </div>
-                <div className="admin-order-actions">
-                  {order.status === 'Awaiting details' && <>
-                    <button className="button" onClick={() => acceptOrder(order)}>Accept order <ArrowRight size={15} /></button>
-                    <button className="collected-button" onClick={() => rejectOrder(order)}>Reject order</button>
-                  </>}
-                  {(order.status === 'Accepted' || order.status === 'Price declined') && <>
-                    <label>Price to agree<div className="price-input-wrap"><input value={String(order.cost || '').replace(/\s*SYP$/i, '')} onChange={(event) => update(order.id, 'cost', event.target.value)} onBlur={(event) => update(order.id, 'cost', event.target.value, true)} placeholder="e.g. 25,000" /><span>SYP</span></div></label>
-                    <button className="button" disabled={!order.cost} onClick={() => sendPriceProposal(order)}>Email price proposal <Mail size={15} /></button>
-                    {order.status === 'Price declined' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Delete declined order <X size={14} /></button>}
-                  </>}
-                  {order.status === 'Awaiting price agreement' && <p className="admin-price-waiting">Waiting for customer response to <strong>{formatPrice(order.cost)}</strong>.</p>}
-                  {order.status === 'Preparing' && <>
-                    <div className="collection-time-field"><span>Collection date to send</span><DatePickerDropdown value={order.pickupDate || order.date} minDate={new Date().toISOString().slice(0,10)} onChange={(value) => update(order.id, 'pickupDate', value)} /></div>
-                    <div className="collection-time-field"><span>Collection time to send</span><CollectionTimePicker value={order.pickupTime} onChange={(value) => update(order.id, 'pickupTime', value)} /></div>
-                    <button className="button" disabled={!(order.pickupDate || order.date) || !normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
-                  </>}
-                  {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
-                  {order.status === 'Rejected' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Remove declined order <X size={14} /></button>}
-                </div>
+                </details>
               </article>
             )) : <div className="empty-state">New customer requests will appear here.</div>}
             </div>

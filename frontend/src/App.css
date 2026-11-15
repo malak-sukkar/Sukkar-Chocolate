@@ -208,10 +208,9 @@
 .cancelled-order-delete:hover{background:var(--rose);border-color:var(--rose);color:#fff}
 .cancelled-order-delete:focus-visible{outline:2px solid var(--rose);outline-offset:3px}
 .cancelled-order-delete:disabled{opacity:.5;cursor:wait}
-.admin-order.removable-admin-order{position:relative}
-.admin-order.removable-admin-order .order-card-top{padding-right:48px}
-.admin-order.removable-admin-order .order-card-top>.eyebrow{max-width:100%;overflow-wrap:anywhere}
-.admin-order.removable-admin-order .order-card-top .cancelled-order-delete{position:absolute;top:12px;right:12px}
+.admin-order.removable-admin-order .admin-order-info{position:relative}
+.admin-order.removable-admin-order .order-card-top{min-height:38px;padding-right:0;justify-content:flex-end}
+.admin-order.removable-admin-order .order-card-top .cancelled-order-delete{position:static}
 .order-cancelled-status{margin:16px 0 4px;padding:11px 14px;border-left:3px solid #9b514a;background:#f3e8e4;color:#7d403a;font-size:11px;font-weight:600}
 .order-collected-status{margin:16px 0 4px;padding:11px 14px;border-left:3px solid #668d5f;background:#e8f0e4;color:#42653e;font-size:11px;font-weight:600}
 .admin-accordion-toggle.single-line>span{white-space:nowrap}
@@ -265,4 +264,38 @@
 @media(max-width:767px){.my-orders .order-card>p{font-size:13px;line-height:1.65;overflow-wrap:anywhere}.my-orders .order-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px;align-items:start;margin:18px 0}.my-orders .order-meta>span{min-width:0;font-size:11px;line-height:1.4}.my-orders .order-meta>span strong{margin-top:5px;font-size:13px;line-height:1.4;overflow-wrap:anywhere}.my-orders .order-meta>.order-photos-meta{grid-column:1/-1}}
 @media(min-width:1100px){.my-orders{max-width:920px}}
 @media(max-width:640px){.admin-page,.admin-order{box-sizing:border-box;min-width:0;width:100%}.admin-order{grid-template-columns:minmax(0,1fr);gap:16px}.admin-order-info,.admin-order-actions{box-sizing:border-box;min-width:0;width:100%}.admin-order .order-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 12px;min-width:0;width:100%}.admin-order .order-meta>span{min-width:0;overflow-wrap:anywhere}.admin-order .order-meta>span strong{overflow-wrap:anywhere}.admin-order .order-meta>.admin-photo-meta{grid-column:1/-1}.admin-order-actions>*{min-width:0;max-width:100%}}
-.admin-order-info>p{max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.admin-order-info>p{max-width:100%;min-width:0;overflow-wrap:anywhere;word-break:break-word;color:var(--ink)}
+.order-allergies-meta{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+.order-allergies-meta strong{display:block;max-width:100%;white-space:normal;overflow-wrap:anywhere;word-break:break-word}
+
+/* Order cards stay compact until their summary is opened. */
+.order-card{padding:0;overflow:hidden}
+.order-details>summary{list-style:none}
+.order-details>summary::-webkit-details-marker{display:none}
+.order-summary{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:15px;padding:16px 20px;cursor:pointer}
+.order-summary:focus-visible{outline:2px solid var(--rose);outline-offset:-3px}
+.order-summary-reference{display:flex;justify-self:start;width:max-content;max-width:100%;min-width:0;box-sizing:border-box;flex-direction:column;align-items:flex-start;gap:3px;padding:7px 10px;border-left:2px solid var(--rose);border-radius:3px;background:#f4efe6;overflow-wrap:anywhere}
+.order-summary-reference small{color:#756960;font-size:8px;line-height:1.2}
+.order-summary-reference strong{color:var(--rose);font-size:10px;letter-spacing:.08em;line-height:1.3}
+.order-summary-side{display:contents}
+.order-summary-name{min-width:0;overflow-wrap:anywhere;color:var(--ink);font:500 21px var(--serif)}
+.order-summary-status{font-size:10px;white-space:nowrap}
+.order-summary-status.collected{background:#e4efdf;color:#42653e}
+.order-summary-status.cancelled{background:#f3e8e4;color:#7d403a}
+.order-summary-toggle{display:inline-flex;align-items:center;gap:6px;color:#756960;font-size:10px;white-space:nowrap}
+.order-summary-toggle svg{transition:transform .2s ease}
+.order-details[open] .order-summary-toggle svg{transform:rotate(180deg)}
+.order-details[open] .order-summary{border-bottom:1px solid var(--line)}
+.order-details-body{padding:18px 25px 24px}
+.order-details-body>.order-card-top .cancelled-order-delete{margin-left:auto}
+.order-details-body>h2{margin:16px 0 8px}
+.order-details-body>p{max-width:100%;min-width:0;margin-top:0;overflow-wrap:anywhere;word-break:break-word}
+.admin-order{display:block;padding:0;overflow:hidden}
+.admin-order-details{display:block;min-width:0}
+.admin-order-expanded{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(220px,.8fr);gap:28px;padding:20px 23px 24px}
+.admin-order-info,.admin-order-actions{min-width:0}
+.admin-order-actions{align-self:start}
+.admin-order .order-schedule-box{background:var(--cream)}
+.admin-order-details .order-summary-reference{background:var(--cream)}
+@media(max-width:900px){.admin-order-expanded{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:640px){.order-summary{grid-template-columns:auto minmax(0,1fr);gap:7px 10px;padding:13px}.order-summary-reference{grid-column:1;grid-row:1;align-self:stretch;justify-content:center;padding:7px}.order-summary-side{grid-column:2;grid-row:1;display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;align-self:stretch}.order-summary-name,.order-summary-status{position:relative;top:10px}.order-summary-name{font-size:16px}.order-summary-status{font-size:9px}.order-summary-toggle{align-self:flex-end;font-size:10px}.order-details-body{padding:15px 14px 19px}.admin-order-expanded{padding:15px 14px 19px}}
