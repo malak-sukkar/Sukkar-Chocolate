@@ -775,16 +775,14 @@ function MyOrders() {
       {questionMessage && <p className="success-message" role="status">{questionMessage}</p>}
       <div className="my-orders">
         {orders.length ? orders.map((order) => <article className="order-card" id={`order-${order.id}`} key={order.id}>
-          <div className="order-card-top"><span className="eyebrow">{order.id}</span></div>
+          <div className="order-card-top"><span className="eyebrow">{order.id}</span>{order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeCancelledOrder(order)} aria-label="Delete cancelled order" title="Delete cancelled order">{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}</div>
           <h2>Made for {order.name}</h2><p>{order.description}</p>
-          <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div>
-          {(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <section className="customer-order-photos" aria-label="Photos attached to this order"><strong>Reference photos</strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></section>}
+          <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span>Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
           <OrderStatusJourney status={order.status} />
           {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
           {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
           <div className="customer-order-actions">
             {['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price declined'].includes(order.status) && <div className="customer-cancel-group"><button className="button button-outline" type="button" disabled={cancellingOrder === order.id} onClick={() => cancel(order)}>{cancellingOrder === order.id ? 'Cancelling…' : 'Cancel order'} <X size={15}/></button><small>You can cancel only before preparation begins.</small></div>}
-            {order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeCancelledOrder(order)} aria-label="Delete cancelled order" title="Delete cancelled order">{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}
             {!['Cancelled', 'Rejected'].includes(order.status) && <button className="text-link" type="button" disabled={questionOrder === order.id} onClick={() => askAboutOrder(order)}>{questionOrder === order.id ? 'Sending email…' : 'Ask about this order'} <ArrowRight size={15}/></button>}
           </div>
         </article>) : <div className="empty-state">No orders on this device yet. <Link to="/custom">Tell us what you have in mind <ArrowRight size={15}/></Link></div>}
@@ -1185,9 +1183,9 @@ function Admin() {
             <AdminAccordionHeader id="orders" eyebrow="Customer requests" title={<>Orders&nbsp;<span className="admin-count-badge">{orders.length}</span></>} open={openAdminSection === 'orders'} onToggle={() => toggleAdminSection('orders')} singleLineTitle />
             <div id="orders-content" className="admin-section-content" hidden={openAdminSection !== 'orders'}>
             {orders.length ? orders.map((order) => (
-              <article className="admin-order" key={order.id}>
+              <article className={`admin-order${order.status === 'Cancelled' ? ' cancelled-admin-order' : ''}`} key={order.id}>
                 <div className="admin-order-info">
-                  <div className="order-card-top"><span className="eyebrow">{order.id} · {new Date(order.createdAt || Date.now()).toLocaleDateString()}</span></div>
+                  <div className="order-card-top"><span className="eyebrow">{order.id} · {new Date(order.createdAt || Date.now()).toLocaleDateString()}</span>{order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" onClick={() => removeCancelledOrder(order.id)} aria-label="Delete cancelled order" title="Delete cancelled order"><Trash2 size={17}/></button>}</div>
                   <h3>{order.name}</h3><p>{order.description}</p>
                   <div className="order-meta">
                     <span>Phone<strong>{order.phone}</strong></span><span>Email<strong>{order.email}</strong></span>
@@ -1215,7 +1213,6 @@ function Admin() {
                   </>}
                   {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
                   {order.status === 'Rejected' && <button className="collected-button" onClick={() => markCollected(order.id)}>Remove declined order <X size={14} /></button>}
-                  {order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" onClick={() => removeCancelledOrder(order.id)} aria-label="Delete cancelled order" title="Delete cancelled order"><Trash2 size={17}/></button>}
                 </div>
               </article>
             )) : <div className="empty-state">New customer requests will appear here.</div>}
