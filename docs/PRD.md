@@ -30,7 +30,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - Visitors can browse without an account. Customers must sign in or register before submitting a custom order or using My Orders. Registration collects first name, last name, email, and password. Password visibility can be toggled with an eye icon.
 - The custom order form collects first and last name, phone with country calling code, email, requested collection date and time, idea description, allergy information, and up to five reference photos.
 - The collection date must be at least three days ahead and is selected from a calendar dropdown styled to match the site.
-- The customer chooses a requested time with the hour/minute/AM-PM wheel, between 10:00 AM and 10:00 PM. This lets Sukkar know when the customer hopes the order will be ready.
+- The customer chooses a requested time with the hour/minute/AM-PM wheel. Any time of day is allowed; the chosen time tells Sukkar when the customer hopes the order will be ready.
 - Allergy information is a Yes/No list. Choosing Yes reveals a required field for allergy or dietary details.
 - The idea description prompt should guide customers to include chocolate and filling, colours, message, size, and occasion.
 - Reference photos are stored privately in Supabase Storage and available to the admin with the order. The new-order email to Sukkar includes temporary links to the attached photos.
@@ -87,7 +87,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 ## Acceptance checks
 
 - A visitor can browse public pages without signing in; a customer can register, sign in, and submit an order with up to five photos.
-- The order form enforces the three-day minimum requested collection date, the 10:00 AM–10:00 PM requested time range, and the conditional allergy details field. Admin can set a confirmed collection date and time, defaulted to the customer's request and editable before sending the ready email.
+- The order form enforces the three-day minimum requested collection date and the conditional allergy details field. It allows any time of day. Admin can set a confirmed collection date and time, defaulted to the customer's request and editable before sending the ready email.
 - Admin can accept or reject new requests before processing; acceptance sends no email. A rejected request, price proposal, customer response, and ready-for-collection update follow the email behavior described above.
 - Customer and admin order journeys show the same current status. Both sides show the requested date and time, and the admin-confirmed collection date and time once ready.
 - Admin can enlarge attached order photos, manage gallery details and categories, moderate reviews, update contact details and map location, and change dashboard email or password.

@@ -17,7 +17,7 @@ Customers can browse the site without an account. They need to sign in or create
 - Open the person icon in the top-right of the navigation bar to change their account email or password.
 - Send Sukkar a message through the contact form or ask about an existing order.
 
-The requested collection date must be at least three days ahead, and the requested time must be between 10:00 AM and 10:00 PM. Sukkar confirms the collection date and time when the order is ready, using the requested schedule as a starting point. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.
+The requested collection date must be at least three days ahead. Customers can choose any time of day; Sukkar confirms the collection date and time when the order is ready, using the requested schedule as a starting point. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.
 
 ## How a custom order works
 

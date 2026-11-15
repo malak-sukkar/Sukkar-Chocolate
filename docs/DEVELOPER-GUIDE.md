@@ -118,7 +118,7 @@ See `backend/supabase/schema.sql` and `backend/supabase/customer-auth-migration.
 ### Custom order lifecycle
 
 1. The customer signs in, enters first and last name, contact information, idea, requested collection date and time, allergy details, and optionally up to five reference photos.
-2. The form requires a requested collection date at least three days ahead and a requested time from 10:00 AM through 10:00 PM.
+2. The form requires a requested collection date at least three days ahead and a requested time. There is no time-of-day restriction.
 3. With Supabase connected, photos upload to the private bucket and the order row is created with `Awaiting details`. The function emails the Admin Dashboard owner with request details and temporary photo links, and emails the customer a receipt.
 4. The admin sees the request and photos, then accepts or rejects it. Acceptance alone sends no email. Rejection sends the customer an email.
 5. The admin proposes a price. The customer gets an email with a **View your order** button and a plain-text URL to My Orders, where they can accept or reject the price. The response is stored and emails the admin.

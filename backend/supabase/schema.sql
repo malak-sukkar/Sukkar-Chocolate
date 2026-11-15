@@ -38,7 +38,7 @@ with check (
   and agreed_cost is null
   and collection_time is null
   and confirmed_collection_date is null
-  and preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$'
+  and preferred_collection_time ~ '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
   and case when jsonb_typeof(photo_paths) = 'array' then
     jsonb_array_length(photo_paths) <= 5
     and not exists (
@@ -240,8 +240,9 @@ revoke all on function public.consume_rate_limit(text, integer, integer) from pu
 grant execute on function public.consume_rate_limit(text, integer, integer) to service_role;
 
 alter table public.orders drop constraint if exists orders_preferred_collection_time_hours_check;
-alter table public.orders add constraint orders_preferred_collection_time_hours_check
-  check (preferred_collection_time is null or preferred_collection_time ~ '^(10|11|12|13|14|15|16|17|18|19|20|21|22):[0-5][0-9]$') not valid;
+alter table public.orders drop constraint if exists orders_preferred_collection_time_format_check;
+alter table public.orders add constraint orders_preferred_collection_time_format_check
+  check (preferred_collection_time is null or preferred_collection_time ~ '^([01]?[0-9]|2[0-3]):[0-5][0-9]$') not valid;
 
 create index if not exists orders_customer_user_id_idx on public.orders(customer_user_id);
 create index if not exists gallery_items_category_id_idx on public.gallery_items(category_id);
