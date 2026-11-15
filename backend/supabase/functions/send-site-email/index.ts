@@ -114,7 +114,7 @@ async function getAdminEmail() {
 
 async function getOrderPhotoLinks(paths: string[] = []) {
   if (!paths.length) return [];
-  const { data } = await adminClient.storage.from('order-reference-photos').createSignedUrls(paths, 86400);
+  const { data } = await adminClient.storage.from('order-reference-photos').createSignedUrls(paths, 30 * 24 * 60 * 60);
   return (data || []).flatMap((file) => file.signedUrl ? [file.signedUrl.startsWith('http') ? file.signedUrl : `${supabaseUrl}/storage/v1${file.signedUrl}`] : []);
 }
 
@@ -181,8 +181,11 @@ Deno.serve(async (request) => {
       if (!await consumeRateLimit(`mail:order_submitted:${user.id}:${order.id}`, 3600, 1)) return response({ error: 'The confirmation email for this order was already requested. Please check your inbox.' }, 429);
       const adminEmail = await getAdminEmail();
       const photoLinks = await getOrderPhotoLinks(order.photo_paths || []);
-      const orderText = `New custom order request ${order.id}\n\nCustomer: ${order.customer_name}\nEmail: ${order.email}\nPhone: ${order.phone}\nCollection date: ${order.collection_date}\nPreferred time: ${order.preferred_collection_time}\nAllergies: ${order.allergies || 'No'}\n\nIdea:\n${order.description}${photoLinks.length ? `\n\nReference photos (available for 24 hours):\n${photoLinks.join('\n')}` : ''}`;
-      await sendEmail({ to: adminEmail, replyTo: order.email, subject: `New Sukkar order request ${order.id}`, text: orderText });
+      const photoText = photoLinks.map((link, index) => `Photo ${index + 1}: ${link}`).join('\n');
+      const photoButtons = photoLinks.map((link, index) => `<a href="${escapeHtml(link)}" style="display:inline-block;margin:4px 8px 4px 0;padding:11px 16px;border-radius:6px;background:#9b514a;color:#ffffff;text-decoration:none;font-weight:600">&#128247; View photo ${index + 1}</a>`).join('');
+      const orderText = `New custom order request ${order.id}\n\nCustomer: ${order.customer_name}\nEmail: ${order.email}\nPhone: ${order.phone}\nCollection date: ${order.collection_date}\nPreferred time: ${order.preferred_collection_time}\nAllergies: ${order.allergies || 'No'}\n\nIdea:\n${order.description}${photoLinks.length ? `\n\nReference photos (secure links expire after 30 days):\n${photoText}` : ''}`;
+      const orderHtml = `<div style="max-width:640px;margin:0 auto;padding:24px;font-family:Arial,sans-serif;color:#34261f;line-height:1.6"><h2 style="margin:0 0 18px;color:#34261f">New custom order request</h2><p><strong>Order:</strong> ${escapeHtml(order.id)}</p><p><strong>Customer:</strong> ${escapeHtml(order.customer_name)}<br/><strong>Email:</strong> ${escapeHtml(order.email)}<br/><strong>Phone:</strong> ${escapeHtml(order.phone)}<br/><strong>Collection date:</strong> ${escapeHtml(order.collection_date)}<br/><strong>Preferred time:</strong> ${escapeHtml(formatCollectionTime(order.preferred_collection_time))}<br/><strong>Allergies:</strong> ${escapeHtml(order.allergies || 'No')}</p><p><strong>Idea</strong><br/>${escapeHtml(order.description).replace(/\n/g, '<br/>')}</p>${photoLinks.length ? `<h3 style="margin:22px 0 8px">Reference photos</h3><div>${photoButtons}</div><p style="margin-top:8px;color:#756960;font-size:12px">Secure photo links are available for 30 days.</p>` : ''}</div>`;
+      await sendEmail({ to: adminEmail, replyTo: order.email, subject: `New Sukkar order request ${order.id}`, text: orderText, html: orderHtml });
       await new Promise((resolve) => setTimeout(resolve, 1100));
       await sendEmail({ to: order.email, replyTo: adminEmail, subject: `We received your Sukkar request ${order.id}`, text: `Hello ${order.customer_name},\n\nThank you for your custom order request. Sukkar has received it and will email you about the price and details.\n\nOrder reference: ${order.id}\nCollection date: ${order.collection_date}\n\nYou can check its progress in My orders on the website.` });
       return response({ ok: true });
