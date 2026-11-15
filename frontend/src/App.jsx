@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, UserPlus, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { cancelCustomerOrder, createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { cancelCustomerOrder, createRemoteOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -347,17 +347,19 @@ function ReviewStars({ rating }) {
   return <span className="review-stars" role="img" aria-label={score ? `${score} out of 5 stars` : 'No star rating provided'}>{Array.from({ length: 5 }, (_, index) => <span key={index} className={index < score ? 'filled' : ''}>★</span>)}</span>;
 }
 
-function OrderPhotos({ paths, previews, session }) {
+function OrderPhotos({ paths, previews, session, customer = false }) {
   const [links,setLinks]=useState([]); const [error,setError]=useState('');
   const [selectedPhoto,setSelectedPhoto]=useState('');
   useEffect(() => {
     let active = true;
     if (previews?.length || !paths?.length) { setLinks([]); return () => { active = false; }; }
-    Promise.all(paths.map(path => signedOrderPhoto(path, session)))
+    const photoSession = customer ? getCustomerSession() : session;
+    const signPhoto = customer ? signedCustomerOrderPhoto : signedOrderPhoto;
+    Promise.all(paths.map(path => signPhoto(path, photoSession)))
       .then(urls => { if (active) { setLinks(urls); setError(''); } })
       .catch(() => { if (active) setError('Could not load photo previews. Check Supabase Storage permissions.'); });
     return () => { active = false; };
-  }, [paths, previews, session]);
+  }, [paths, previews, session, customer]);
   useEffect(() => {
     if (!selectedPhoto) return undefined;
     const closeOnEscape = (event) => { if (event.key === 'Escape') setSelectedPhoto(''); };
@@ -366,7 +368,7 @@ function OrderPhotos({ paths, previews, session }) {
   }, [selectedPhoto]);
   const photoUrls = previews?.length ? previews : links;
   if (!paths?.length && !photoUrls.length) return <span>None attached</span>;
-  return <span className="order-photo-list">{error&&<small>{error}</small>}{photoUrls.length > 0 ? <span className="order-photo-previews">{photoUrls.map((url,index)=><button type="button" key={`${index}-${url.slice(0,32)}`} onClick={()=>setSelectedPhoto(url)} aria-label={`Enlarge reference photo ${index+1}`}><img src={url} alt={`Order reference ${index+1}`}/></button>)}</span> : <small>Loading photo previews…</small>}<small>{(paths?.length || photoUrls.length)} {(paths?.length || photoUrls.length)===1?'photo':'photos'} attached</small>{selectedPhoto&&<span className="lightbox admin-photo-lightbox" role="dialog" aria-modal="true" aria-label="Order reference photo" onClick={()=>setSelectedPhoto('')}><button className="lightbox-close" type="button" aria-label="Close enlarged photo" onClick={()=>setSelectedPhoto('')}><X/></button><img src={selectedPhoto} alt="Enlarged order reference" onClick={(event)=>event.stopPropagation()}/></span>}</span>;
+  return <span className="order-photo-list">{error&&<small>{error}</small>}{photoUrls.length > 0 ? <span className="order-photo-previews">{photoUrls.map((url,index)=><button type="button" key={`${index}-${url.slice(0,32)}`} onClick={()=>setSelectedPhoto(url)} aria-label={`Enlarge reference photo ${index+1}`}><img src={url} alt={`Order reference ${index+1}`}/></button>)}</span> : <small>Loading photo previews…</small>}<small>{(paths?.length || photoUrls.length)} {(paths?.length || photoUrls.length)===1?'photo':'photos'} attached</small>{selectedPhoto&&<span className="lightbox order-photo-lightbox" role="dialog" aria-modal="true" aria-label="Order reference photo" onClick={()=>setSelectedPhoto('')}><button className="lightbox-close" type="button" aria-label="Close enlarged photo" onClick={()=>setSelectedPhoto('')}><X/></button><img src={selectedPhoto} alt="Enlarged order reference" onClick={(event)=>event.stopPropagation()}/></span>}</span>;
 }
 
 function Home() {
@@ -760,6 +762,7 @@ function MyOrders() {
           <div className="order-card-top"><span className="eyebrow">{order.id}</span></div>
           <h2>Made for {order.name}</h2><p>{order.description}</p>
           <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}</div>
+          {(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <section className="customer-order-photos" aria-label="Photos attached to this order"><strong>Reference photos</strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></section>}
           <OrderStatusJourney status={order.status} />
           {order.status === 'Awaiting price agreement' && <div className="customer-price-response"><p>Sukkar has proposed this price:</p><strong>{formatPrice(order.cost)}</strong><div><button className="button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, true)}>Accept price <ArrowRight size={15}/></button><button className="collected-button" type="button" disabled={respondingOrder === order.id} onClick={() => respond(order, false)}>Reject price</button></div></div>}
           {order.status === 'Price declined' && <p className="price-response-note">You declined this price. Sukkar will review your order.</p>}
