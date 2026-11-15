@@ -9,6 +9,10 @@ alter table public.orders
   add column if not exists customer_last_name text;
 alter table public.orders
   add column if not exists preferred_collection_time text;
+alter table public.orders
+  add column if not exists customer_hidden boolean not null default false;
+alter table public.orders
+  add column if not exists admin_hidden boolean not null default false;
 update public.orders
 set preferred_collection_time = collection_time,
     collection_time = null

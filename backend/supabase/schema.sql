@@ -16,6 +16,8 @@ create table if not exists public.orders (
   preferred_collection_time text,
   collection_time text,
   status text not null default 'Awaiting details' check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection', 'Cancelled', 'Collected')),
+  customer_hidden boolean not null default false,
+  admin_hidden boolean not null default false,
   created_at timestamptz not null default now()
 );
 
