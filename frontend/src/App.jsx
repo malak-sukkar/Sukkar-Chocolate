@@ -444,13 +444,66 @@ function CustomOrder() {
   const [preferredTimeError, setPreferredTimeError] = useState('');
   const [hasAllergies, setHasAllergies] = useState('no');
   const [customerSession, setCustomerSession] = useState(getCustomerSession);
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [photoSelectionError, setPhotoSelectionError] = useState('');
+  const [showPhotoGallery, setShowPhotoGallery] = useState(false);
+  const [activeGalleryCategory, setActiveGalleryCategory] = useState('All treats');
+  const [uploadPreviewUrls, setUploadPreviewUrls] = useState({});
+  const shared = usePublicContent();
+  const extraGalleryPhotos = read(STORAGE.photos, []);
+  const galleryOverrides = shared?.overrides || read('sukkar-photo-categories', {});
+  const galleryDescriptions = read('sukkar-photo-descriptions', {});
+  const galleryNames = read('sukkar-photo-names', {});
+  const removedGalleryPhotos = new Set(read('sukkar-removed-photos', []));
+  const websiteGalleryPhotos = [...products, ...extraGalleryPhotos, ...(shared?.gallery || [])].map((item) => {
+    const override = galleryOverrides[item.id];
+    return { ...item, name: override?.name ?? galleryNames[item.id] ?? item.name, category: override?.category || item.category, description: override?.description ?? galleryDescriptions[item.id] ?? item.description, image: override?.image || item.image, isVisible: override?.is_visible ?? !removedGalleryPhotos.has(item.id) };
+  }).filter((item) => item.isVisible && !removedGalleryPhotos.has(item.id));
+  const galleryCategories = ['All treats', ...new Set(websiteGalleryPhotos.map((item) => item.category).filter(Boolean))];
+  const visibleWebsiteGalleryPhotos = activeGalleryCategory === 'All treats' ? websiteGalleryPhotos : websiteGalleryPhotos.filter((item) => item.category === activeGalleryCategory);
+  useEffect(() => {
+    const previews = Object.fromEntries(selectedPhotos.filter((photo) => photo.kind === 'upload').map((photo) => [photo.id, URL.createObjectURL(photo.file)]));
+    setUploadPreviewUrls(previews);
+    return () => Object.values(previews).forEach((url) => URL.revokeObjectURL(url));
+  }, [selectedPhotos]);
+  useEffect(() => {
+    if (!showPhotoGallery) return undefined;
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setShowPhotoGallery(false); };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [showPhotoGallery]);
   useEffect(() => { const syncSession = () => setCustomerSession(getCustomerSession()); window.addEventListener('sukkar-customer-auth', syncSession); return () => window.removeEventListener('sukkar-customer-auth', syncSession); }, []);
   if (!customerSession?.access_token) return <main className="inner-page account-page"><PageIntro eyebrow="Before you order" title={<>Sign in to <em>make it yours.</em></>} text="Please sign in or register before sending a custom order request."/><section className="form-panel account-panel account-gate"><p>{supabaseReady ? 'Your order details will be submitted securely with your account.' : 'Preview mode: create a test account to try the order flow. Preview orders stay in this browser.'}</p><div className="account-gate-actions"><Link className="button" to="/sign-in?next=%2Fcustom">Sign in <ArrowRight size={15}/></Link><Link className="button button-outline" to="/register?next=%2Fcustom">Create account <ArrowRight size={15}/></Link></div></section></main>;
+  const addDevicePhotos = (event) => {
+    const incoming = [...(event.currentTarget.files || [])];
+    if (!incoming.length) return;
+    const availableSlots = Math.max(0, 5 - selectedPhotos.length);
+    const accepted = incoming.slice(0, availableSlots).map((file) => ({ kind: 'upload', id: crypto.randomUUID(), name: file.name, file }));
+    if (accepted.length) setSelectedPhotos((current) => [...current, ...accepted].slice(0, 5));
+    setPhotoSelectionError(incoming.length > availableSlots ? `You can attach up to 5 photos. Only ${availableSlots} more could be added.` : '');
+    event.currentTarget.value = '';
+  };
+  const toggleWebsiteGalleryPhoto = (item) => {
+    const selected = selectedPhotos.some((photo) => photo.kind === 'website-gallery' && photo.id === item.id);
+    if (selected) {
+      setSelectedPhotos((current) => current.filter((photo) => !(photo.kind === 'website-gallery' && photo.id === item.id)));
+      setPhotoSelectionError('');
+    } else if (selectedPhotos.length >= 5) {
+      setPhotoSelectionError('You can attach up to 5 photos. Remove one to choose another.');
+    } else {
+      setSelectedPhotos((current) => [...current, { kind: 'website-gallery', id: item.id, name: item.name || 'Sukkar gallery photo', image: item.image }]);
+      setPhotoSelectionError('');
+    }
+  };
+  const removeSelectedPhoto = (id) => {
+    setSelectedPhotos((current) => current.filter((photo) => photo.id !== id));
+    setPhotoSelectionError('');
+  };
   const submit = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
-    const files = [...form.elements.photos.files];
+    const files = selectedPhotos;
     if (files.length > 5) return;
     const collectionDate = data.get('date');
     if (!collectionDate) { setError('Choose a collection date.'); return; }
@@ -464,9 +517,20 @@ function CustomOrder() {
     setPreferredTimeError('');
     setSending(true);
     setError('');
-    const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map(file=>file.name), status:'Awaiting details', cost:'', preferredPickupTime, pickupTime:'', createdAt:new Date().toISOString() };
+    const order = { id: `SK-${crypto.randomUUID().slice(0,8).toUpperCase()}`, firstName:data.get('firstName'), lastName:data.get('lastName'), name:[data.get('firstName'), data.get('lastName')].filter(Boolean).join(' '), phone:readPhone(data), email:data.get('email'), customerUserId:customerSession.user.id, description:data.get('description'), date:collectionDate, allergies:hasAllergies === 'yes' ? data.get('allergies') : 'No', photoNames:files.map((photo)=>photo.kind === 'upload' ? photo.file.name : photo.name), status:'Awaiting details', cost:'', preferredPickupTime, pickupTime:'', createdAt:new Date().toISOString() };
     try {
-      const savedOrder = supabaseReady ? await createRemoteOrder(order, files, customerSession) : { ...order, trackingToken: crypto.randomUUID(), photoPaths: [], photoPreviews: await Promise.all(files.map(fileToDataUrl)) };
+      const uploadFiles = await Promise.all(files.map(async (photo) => {
+        if (photo.kind === 'upload') return photo.file;
+        const response = await fetch(photo.image);
+        if (!response.ok) throw new Error(`Could not prepare “${photo.name}” from the Sukkar gallery. Please choose it again.`);
+        const blob = await response.blob();
+        const type = blob.type || 'image/jpeg';
+        const extension = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic' }[type] || 'jpg';
+        const safeName = photo.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 42) || 'sukkar-gallery-photo';
+        return new File([blob], `${safeName}.${extension}`, { type });
+      }));
+      const localPreviews = await Promise.all(files.map((photo) => photo.kind === 'website-gallery' ? photo.image : fileToDataUrl(photo.file)));
+      const savedOrder = supabaseReady ? await createRemoteOrder(order, uploadFiles, customerSession) : { ...order, trackingToken: crypto.randomUUID(), photoPaths: [], photoPreviews: localPreviews };
       const saved=read(STORAGE.orders,[]);
       write(STORAGE.orders,[{...savedOrder,photoNames:order.photoNames},...saved]);
       let emailError = '';
@@ -475,11 +539,19 @@ function CustomOrder() {
       setDone({ ...order, emailError });
       form.reset();
       setHasAllergies('no');
+      setSelectedPhotos([]);
+      setPhotoSelectionError('');
+      setShowPhotoGallery(false);
     } catch (cause) {
       setError(cause.message || 'We could not save your request. Please try again.');
     } finally { setSending(false); }
   };
-  return <main className="inner-page order-page"><PageIntro eyebrow="A treat that starts with your idea" title={<>Let’s make it <em>yours.</em></>} text="Tell us what you’re picturing and when you’d like to collect it. You can add up to five reference photos."/><div className="order-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid"><label>First name<input name="firstName" required autoComplete="given-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ')[0] || ''} placeholder="Your first name"/></label><label>Last name<input name="lastName" required autoComplete="family-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''} placeholder="Your last name"/></label><PhoneNumberField/><label>Email address<input name="email" type="email" required autoComplete="email" defaultValue={customerSession.user?.email || ''} placeholder="you@example.com"/></label><div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div><div className="time-field-label"><span>Preferred collection time</span><PreferredTimeWheelPicker name="pickupTime" invalid={Boolean(preferredTimeError)} onChange={(value) => setPreferredTimeError(isPreferredCollectionTimeAllowed(value) ? '' : 'Choose a time between 10:00 AM and 10:00 PM.')}/>{preferredTimeError && <small id="preferred-time-error" className="time-field-error" role="alert">{preferredTimeError}</small>}{!preferredTimeError && <small className="time-field-note">Choose a time between 10:00 AM and 10:00 PM.</small>}</div><label className="full-field">Describe your idea<textarea name="description" required minLength="10" maxLength="1500" rows="5" placeholder="Chocolate and filling, colours, message, size or occasion — share anything that helps us imagine it…"/></label><fieldset className="full-field allergy-field"><legend>Any allergies or dietary requirements?</legend><select name="hasAllergies" value={hasAllergies} onChange={(event) => setHasAllergies(event.target.value)}><option value="no">No</option><option value="yes">Yes</option></select>{hasAllergies === 'yes' && <label className="allergy-details">Please tell us about any allergies or dietary requirements<input name="allergies" required placeholder="e.g. nuts, dairy, gluten"/></label>}</fieldset><label className="full-field upload-field">Reference photos <span className="optional">(up to 5)</span><input name="photos" type="file" accept="image/*" multiple onChange={(event)=>{if(event.target.files.length>5) event.target.setCustomValidity('Please choose up to 5 photos.'); else event.target.setCustomValidity('');}}/><small>{supabaseReady ? 'Photos are uploaded privately with your request.' : 'Preview photos stay on this device and are not uploaded.'}</small></label><button className="button" type="submit" disabled={sending}>{sending?'Sending request…':'Send order request'} <ArrowRight size={16}/></button><p className="form-footnote">{supabaseReady ? 'Your request and photos are saved securely. You’ll receive an email and Sukkar will email you about the price before starting.' : 'Preview order saved only in this browser. Email sending requires the connected website setup.'}</p></form>{error&&<p className="error-message">{error}</p>}{done&&<div className="success-card"><span>✓</span><div><strong>Your request was saved — thank you!</strong><p>Reference <b>{done.id}</b>. {done.emailError ? 'The order is saved, but its email could not be sent.' : 'A confirmation email has been sent to you, and Sukkar has received your request.'}</p>{done.emailError&&<p className="error-message" role="alert">{done.emailError}</p>}<Link to="/my-orders">View my order <ArrowRight size={15}/></Link></div></div>}</section><aside className="order-aside"><OrderNote/><div className="aside-steps"><span className="eyebrow">A lovely little process</span><ol><li><span>01</span><div><strong>Tell us what you love</strong><p>Share your idea, date and inspiration.</p></div></li><li><span>02</span><div><strong>Agree the details</strong><p>We’ll confirm the price together by email.</p></div></li><li><span>03</span><div><strong>Collect and enjoy</strong><p>Pay when you collect your finished order.</p></div></li></ol></div></aside></div></main>;
+  return <main className="inner-page order-page"><PageIntro eyebrow="A treat that starts with your idea" title={<>Let’s make it <em>yours.</em></>} text="Tell us what you’re picturing and when you’d like to collect it. Add up to five photos from your device or the Sukkar gallery."/><div className="order-layout"><section className="form-panel"><form onSubmit={submit} className="form-grid">
+    <label>First name<input name="firstName" required autoComplete="given-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ')[0] || ''} placeholder="Your first name"/></label><label>Last name<input name="lastName" required autoComplete="family-name" defaultValue={customerSession.user?.user_metadata?.full_name?.split(' ').slice(1).join(' ') || ''} placeholder="Your last name"/></label><PhoneNumberField/><label>Email address<input name="email" type="email" required autoComplete="email" defaultValue={customerSession.user?.email || ''} placeholder="you@example.com"/></label>
+    <div className="date-field-label"><span>Collection date</span><DatePickerDropdown name="date" minDate={new Date(Date.now()+3*86400000).toISOString().slice(0,10)} required/></div><div className="time-field-label"><span>Preferred collection time</span><PreferredTimeWheelPicker name="pickupTime" invalid={Boolean(preferredTimeError)} onChange={(value) => setPreferredTimeError(isPreferredCollectionTimeAllowed(value) ? '' : 'Choose a time between 10:00 AM and 10:00 PM.')}/>{preferredTimeError && <small id="preferred-time-error" className="time-field-error" role="alert">{preferredTimeError}</small>}{!preferredTimeError && <small className="time-field-note">Choose a time between 10:00 AM and 10:00 PM.</small>}</div>
+    <label className="full-field">Describe your idea<textarea name="description" required minLength="10" maxLength="1500" rows="5" placeholder="Chocolate and filling, colours, message, size or occasion — share anything that helps us imagine it…"/></label><fieldset className="full-field allergy-field"><legend>Any allergies or dietary requirements?</legend><select name="hasAllergies" value={hasAllergies} onChange={(event) => setHasAllergies(event.target.value)}><option value="no">No</option><option value="yes">Yes</option></select>{hasAllergies === 'yes' && <label className="allergy-details">Please tell us about any allergies or dietary requirements<input name="allergies" required placeholder="e.g. nuts, dairy, gluten"/></label>}</fieldset>
+    <fieldset className="full-field photo-upload-field"><legend>Reference photos <span className="optional">({selectedPhotos.length} of 5 selected)</span></legend><div className="photo-source-actions"><label className={`button button-outline photo-source-label${selectedPhotos.length >= 5 ? ' disabled' : ''}`}>Choose from your device<input type="file" accept="image/*" multiple disabled={selectedPhotos.length >= 5} onChange={addDevicePhotos}/></label><label className={`button button-outline photo-source-label${selectedPhotos.length >= 5 ? ' disabled' : ''}`}>Take a photo<input type="file" accept="image/*" capture="environment" disabled={selectedPhotos.length >= 5} onChange={addDevicePhotos}/></label><button className="button button-outline" type="button" onClick={() => { setActiveGalleryCategory('All treats'); setShowPhotoGallery(true); }}>Choose from Sukkar gallery</button></div><small>{supabaseReady ? 'Device and gallery photos are uploaded privately with your request.' : 'Preview photos stay in this browser and are not uploaded.'}</small>{photoSelectionError && <small className="error-message" role="alert">{photoSelectionError}</small>}{!!selectedPhotos.length && <div className="photo-preview-grid">{selectedPhotos.map((photo) => <figure className="photo-preview-item" key={photo.id}><img src={photo.kind === 'website-gallery' ? photo.image : uploadPreviewUrls[photo.id]} alt={photo.name}/><button type="button" className="photo-remove-button" aria-label={`Remove ${photo.name}`} onClick={() => removeSelectedPhoto(photo.id)}><X size={15}/></button><figcaption title={photo.name}>{photo.name}</figcaption></figure>)}</div>}</fieldset>
+    <button className="button" type="submit" disabled={sending}>{sending?'Sending request…':'Send order request'} <ArrowRight size={16}/></button><p className="form-footnote">{supabaseReady ? 'Your request and photos are saved securely. You’ll receive an email and Sukkar will email you about the price before starting.' : 'Preview order saved only in this browser. Email sending requires the connected website setup.'}</p></form>{error&&<p className="error-message">{error}</p>}{done&&<div className="success-card"><span>✓</span><div><strong>Your request was saved — thank you!</strong><p>Reference <b>{done.id}</b>. {done.emailError ? 'The order is saved, but its email could not be sent.' : 'A confirmation email has been sent to you, and Sukkar has received your request.'}</p>{done.emailError&&<p className="error-message" role="alert">{done.emailError}</p>}<Link to="/my-orders">View my order <ArrowRight size={15}/></Link></div></div>}</section><aside className="order-aside"><OrderNote/><div className="aside-steps"><span className="eyebrow">A lovely little process</span><ol><li><span>01</span><div><strong>Tell us what you love</strong><p>Share your idea, date and inspiration.</p></div></li><li><span>02</span><div><strong>Agree the details</strong><p>We’ll confirm the price together by email.</p></div></li><li><span>03</span><div><strong>Collect and enjoy</strong><p>Pay when you collect your finished order.</p></div></li></ol></div></aside></div>{showPhotoGallery && <div className="photo-gallery-overlay" role="dialog" aria-modal="true" aria-label="Choose photos from the Sukkar gallery" onClick={() => setShowPhotoGallery(false)}><section className="photo-gallery-dialog" onClick={(event) => event.stopPropagation()}><button type="button" className="lightbox-close photo-gallery-close" aria-label="Close gallery" onClick={() => setShowPhotoGallery(false)}><X/></button><span className="eyebrow">Add a reference</span><h2>Choose from the <em>Sukkar gallery.</em></h2><p>Select up to {5 - selectedPhotos.length} more photo{5 - selectedPhotos.length === 1 ? '' : 's'} from the website gallery.</p><div className="filter-row photo-gallery-filters">{galleryCategories.map((category) => <button key={category} type="button" className={activeGalleryCategory === category ? 'filter-chip active' : 'filter-chip'} onClick={() => setActiveGalleryCategory(category)}>{category}</button>)}</div><div className="photo-gallery-grid">{visibleWebsiteGalleryPhotos.map((item) => { const isSelected = selectedPhotos.some((photo) => photo.kind === 'website-gallery' && photo.id === item.id); const isFull = !isSelected && selectedPhotos.length >= 5; return <button key={item.id} type="button" className={`photo-gallery-option${isSelected ? ' selected' : ''}`} aria-pressed={isSelected} disabled={isFull} onClick={() => toggleWebsiteGalleryPhoto(item)}><img src={item.image} alt=""/><span>{item.name || 'Sukkar creation'}</span>{isSelected && <small>Selected</small>}</button>; })}</div><div className="photo-gallery-dialog-footer"><span>{selectedPhotos.length} of 5 photos selected</span><button type="button" className="button" onClick={() => setShowPhotoGallery(false)}>Done</button></div></section></div>}</main>;
 }
 
 function Contact() {
