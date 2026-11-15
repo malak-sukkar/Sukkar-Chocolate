@@ -394,7 +394,7 @@ function Gallery() {
   }).filter((item) => item.isVisible && !removed.has(item.id));
   const filters = ['All treats', ...(shared?.categories || read('sukkar-categories', categories).filter((item) => item !== 'All treats'))];
   const shown = active === 'All treats' ? items : items.filter((item) => item.category === active);
-  return <main className="inner-page"><PageIntro eyebrow="Our chocolates" title={<>A gallery of <em>little joys.</em></>} text="Every piece is made to order, so colours and details can be tailored to your celebration."/><div className="filter-row" aria-label="Filter gallery">{filters.map((category) => <button key={category} className={active===category?'filter-chip active':'filter-chip'} onClick={()=>setActive(category)}>{category}</button>)}</div><div className="gallery-grid">{shown.map((item, i)=><button className={`gallery-item gallery-item-${i%6}`} key={item.id || item.name} onClick={()=>setSelected(item)}><img src={item.image} alt={item.name || 'Handmade Sukkar treat'}/><span className="gallery-caption"><span>{item.category}</span><strong>{item.name || 'A Sukkar creation'}</strong>{item.description && <small>{item.description}</small>}</span></button>)}</div>{shown.length===0&&<p className="empty-state">More treats are on the way. Choose another collection to explore.</p>}{selected&&<div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.name} onClick={()=>setSelected(null)}><button className="lightbox-close" aria-label="Close"><X/></button><img src={selected.image} alt={selected.name}/><div><span className="eyebrow">{selected.category}</span><h2>{selected.name}</h2>{selected.description && <p>{selected.description}</p>}<Link className="button" to="/custom">Ask about a custom version <ArrowRight size={15}/></Link></div></div>}</main>;
+  return <main className="inner-page"><PageIntro eyebrow="Our chocolates" title={<>A gallery of <em>little joys.</em></>} text="Every piece is made to order, so colours and details can be tailored to your celebration."/><div className="filter-row" aria-label="Filter gallery">{filters.map((category) => <button key={category} className={active===category?'filter-chip active':'filter-chip'} onClick={()=>setActive(category)}>{category}</button>)}</div><div className="gallery-grid">{shown.map((item, i)=><button className={`gallery-item gallery-item-${i%6}`} key={item.id || item.name} onClick={()=>setSelected(item)}><img src={item.image} alt={item.name || 'Handmade Sukkar treat'}/><span className="gallery-caption"><span>{item.category}</span><strong>{item.name || 'A Sukkar creation'}</strong></span></button>)}</div>{shown.length===0&&<p className="empty-state">More treats are on the way. Choose another collection to explore.</p>}{selected&&<div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.name} onClick={()=>setSelected(null)}><button className="lightbox-close" aria-label="Close"><X/></button><img src={selected.image} alt={selected.name}/><div><span className="eyebrow">{selected.category}</span><h2>{selected.name}</h2><Link className="button" to="/custom">Ask about a custom version <ArrowRight size={15}/></Link></div></div>}</main>;
 }
 
 function Reviews() {
@@ -813,7 +813,7 @@ function Admin() {
   const galleryCategories = categoryList.filter((item) => item !== 'All treats');
   const activeGalleryCategory = galleryCategories.includes(selectedGalleryCategory) ? selectedGalleryCategory : (galleryCategories[0] || 'Chocolate');
   const galleryItems = [...products, ...extraPhotos]
-    .map((item) => ({ ...item, name: shared?.overrides?.[item.id]?.name ?? galleryPhotoNames[item.id] ?? item.name, category: photoCategories[item.id] || shared?.overrides?.[item.id]?.category || item.category, description: shared?.overrides?.[item.id]?.description ?? photoDescriptions[item.id] ?? item.description, image: shared?.overrides?.[item.id]?.image || item.image, isVisible: photoVisibility[item.id] ?? shared?.overrides?.[item.id]?.is_visible ?? !removedPhotoIds.includes(item.id) }))
+    .map((item) => ({ ...item, name: galleryPhotoNames[item.id] ?? shared?.overrides?.[item.id]?.name ?? item.name, category: photoCategories[item.id] || shared?.overrides?.[item.id]?.category || item.category, description: photoDescriptions[item.id] ?? shared?.overrides?.[item.id]?.description ?? item.description, image: shared?.overrides?.[item.id]?.image || item.image, isVisible: photoVisibility[item.id] ?? shared?.overrides?.[item.id]?.is_visible ?? !removedPhotoIds.includes(item.id) }))
     .concat((shared?.gallery || []).filter((remote) => !extraPhotos.some((photo) => photo.id === remote.id)))
     ;
 
@@ -1040,7 +1040,7 @@ function Admin() {
     if (!photoName) { setLoginError('Enter a name for the gallery photo.'); return; }
     try {
       if (supabaseReady && session) {
-        const added = await uploadRemoteGalleryPhotos(selected, { name: photoName, description: data.get('description').trim(), category: data.get('category') }, session);
+        const added = await uploadRemoteGalleryPhotos(selected, { name: photoName, description: data.get('description')?.trim() || '', category: data.get('category') }, session);
         const next = [...extraPhotos, ...added];
         setExtraPhotos(next);
         setSaved(true);
@@ -1050,7 +1050,7 @@ function Admin() {
       const added = await Promise.all(selected.map(async (file) => ({
         id: crypto.randomUUID(),
         name: photoName,
-        description: data.get('description').trim(),
+        description: data.get('description')?.trim() || '',
         category: data.get('category'),
         occasion: '',
         image: await fileToDataUrl(file),
@@ -1067,41 +1067,51 @@ function Admin() {
 
   const changePhotoCategory = async (id, category) => {
     const item = galleryItems.find((photo) => photo.id === id);
+    const next = { ...photoCategories, [id]: category };
+    setPhotoCategories(next);
+    write('sukkar-photo-categories', next);
     try {
       if (supabaseReady && session) {
         if (products.some((photo) => photo.id === id)) await saveRemoteProductOverride({ ...item, category }, session);
         else await updateRemoteGalleryItem(id, { category }, session);
       }
-    } catch { setLoginError('Could not save the photo category. Please try again.'); return; }
-    const next = { ...photoCategories, [id]: category };
-    setPhotoCategories(next);
-    write('sukkar-photo-categories', next);
+    } catch { setLoginError('Could not save the photo category. Please try again.'); }
   };
 
-  const changePhotoDescription = async (id, description) => {
+  const changePhotoDescription = (id, description) => {
+    setPhotoDescriptions((current) => {
+      const next = { ...current, [id]: description };
+      write('sukkar-photo-descriptions', next);
+      return next;
+    });
+  };
+
+  const savePhotoDescription = async (id, description) => {
     const item = galleryItems.find((photo) => photo.id === id);
     try {
       if (supabaseReady && session) {
         if (products.some((photo) => photo.id === id)) await saveRemoteProductOverride({ ...item, description }, session);
         else await updateRemoteGalleryItem(id, { description }, session);
       }
-    } catch { setLoginError('Could not save the photo description. Please try again.'); return; }
-    const next = { ...photoDescriptions, [id]: description };
-    setPhotoDescriptions(next);
-    write('sukkar-photo-descriptions', next);
+    } catch { setLoginError('Could not save the photo description. Please try again.'); }
   };
 
-  const changeGalleryPhotoName = async (id, name) => {
+  const changeGalleryPhotoName = (id, name) => {
+    setGalleryPhotoNames((current) => {
+      const next = { ...current, [id]: name };
+      write('sukkar-photo-names', next);
+      return next;
+    });
+  };
+
+  const saveGalleryPhotoName = async (id, name) => {
     const item = galleryItems.find((photo) => photo.id === id);
     try {
       if (supabaseReady && session) {
         if (products.some((photo) => photo.id === id)) await saveRemoteProductOverride({ ...item, name }, session);
         else await updateRemoteGalleryItem(id, { name }, session);
       }
-    } catch { setLoginError('Could not save the photo name. Please try again.'); return; }
-    const next = { ...galleryPhotoNames, [id]: name };
-    setGalleryPhotoNames(next);
-    write('sukkar-photo-names', next);
+    } catch { setLoginError('Could not save the photo name. Please try again.'); }
   };
 
   const removePhoto = async (id) => {
@@ -1314,8 +1324,8 @@ function Admin() {
               <div className="gallery-admin-list">{galleryItems.map((item) => (
                 <div key={item.id}>
                   <img src={item.image} alt={item.name} />
-                  <label className="photo-name-edit">Photo name<input value={item.name || ''} maxLength="100" placeholder="Add a photo name" onChange={(event) => changeGalleryPhotoName(item.id, event.target.value)} /></label>
-                  <label className="photo-description-edit">Description<textarea value={item.description || ''} maxLength="300" rows="3" placeholder="Add a short description" onChange={(event) => changePhotoDescription(item.id, event.target.value)} /></label>
+                  <label className="photo-name-edit">Photo name<input value={item.name || ''} maxLength="100" placeholder="Add a photo name" onChange={(event) => changeGalleryPhotoName(item.id, event.target.value)} onBlur={(event) => saveGalleryPhotoName(item.id, event.target.value)} /></label>
+                  <label className="photo-description-edit">Description<textarea value={item.description || ''} maxLength="300" rows="3" placeholder="Add a short description" onChange={(event) => changePhotoDescription(item.id, event.target.value)} onBlur={(event) => savePhotoDescription(item.id, event.target.value)} /></label>
                   <label className="photo-category-select">Category
                     <select value={item.category} onChange={(event) => changePhotoCategory(item.id, event.target.value)}>
                       {galleryCategories.map((category) => <option key={category} value={category}>{category}</option>)}
