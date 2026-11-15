@@ -12,19 +12,19 @@ Customers can browse the site without an account. They need to sign in or create
 
 - Explore Sukkar’s story, chocolate gallery, customer reviews, contact details, and location map.
 - Filter gallery photos by category and open a photo to see it larger.
-- Send a custom order request with a description, requested collection date and time, allergy details, and up to five reference photos.
+- Send a custom order request with a description, the date and time they want the order ready by, allergy details, and up to five reference photos.
 - Follow the order journey and respond to a proposed price in **My Orders**.
 - Open the person icon in the top-right of the navigation bar to change their account email or password.
 - Send Sukkar a message through the contact form or ask about an existing order.
 
-The requested collection date must be at least three days ahead. Customers can choose any time of day; Sukkar confirms the collection date and time when the order is ready, using the requested schedule as a starting point. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.
+The requested ready-by date must be at least three days ahead. Customers can choose any time of day; Sukkar confirms a collection date and time, using the requested ready-by schedule as a starting point. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.
 
 ## How a custom order works
 
-1. **Send a request.** The customer describes the treat, chooses a requested date and time, and can attach photos. Sukkar and the customer receive confirmation emails.
+1. **Send a request.** The customer describes the treat, chooses when they want it ready by, and can attach photos. Sukkar and the customer receive confirmation emails.
 2. **Sukkar reviews it.** The owner accepts or rejects the request. Accepting it does not send a separate email; a rejection does.
 3. **Agree on a price.** Sukkar emails a price proposal. The email has a **View your order** button and a direct link. The customer signs in to **My Orders** to accept or reject the price. Sukkar receives an email about the response.
-4. **Prepare the order.** After the price is accepted, Sukkar prepares the treat and confirms a collection date and time. Both start as the customer's requested schedule and can be changed.
+4. **Prepare the order.** After the price is accepted, Sukkar prepares the treat and confirms a collection date and time. The suggested schedule starts from the customer's requested ready-by date and time, and can be changed.
 5. **Collect and pay.** Sukkar emails the customer when the order is ready. The customer sees the confirmed collection date and time in My Orders. Payment happens at collection.
 
 There is no online payment or delivery checkout. The admin’s **Mark as collected** action removes a finished order from the active order lists.
