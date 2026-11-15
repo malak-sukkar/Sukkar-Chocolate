@@ -299,3 +299,4 @@
 .admin-order-details .order-summary-reference{background:var(--cream)}
 @media(max-width:900px){.admin-order-expanded{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:640px){.order-summary{grid-template-columns:auto minmax(0,1fr);gap:7px 10px;padding:13px}.order-summary-reference{grid-column:1;grid-row:1;align-self:stretch;justify-content:center;padding:7px}.order-summary-side{grid-column:2;grid-row:1;display:flex;min-width:0;flex-direction:column;align-items:flex-start;justify-content:center;gap:7px;align-self:stretch}.order-summary-name,.order-summary-status{position:relative;top:10px}.order-summary-name{font-size:16px}.order-summary-status{font-size:9px}.order-summary-toggle{align-self:flex-end;font-size:10px}.order-details-body{padding:15px 14px 19px}.admin-order-expanded{padding:15px 14px 19px}}
+@media(max-width:768px){.about-photo img{display:block;width:100%;height:auto;max-height:none;object-fit:contain}}
