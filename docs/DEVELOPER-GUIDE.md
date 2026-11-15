@@ -96,7 +96,7 @@ Schema files are useful for understanding the design, but the live project alrea
 ### Storage buckets
 
 - `gallery-photos` — public product/gallery photos. The gallery reads Supabase copies when present; bundled product images remain a fallback.
-- `order-reference-photos` — private customer attachments. Orders store object paths, not public URLs. Admin/customer interfaces request short-lived signed URLs when previews are needed. The email sent to the owner can include signed links that expire after 24 hours.
+- `order-reference-photos` — private customer attachments. Orders store object paths, not public URLs. Admin/customer interfaces request short-lived signed URLs when previews are needed. The email sent to the owner can include signed links that expire after 30 days.
 
 ### Authentication and authorization
 
@@ -117,13 +117,14 @@ See `backend/supabase/schema.sql` and `backend/supabase/customer-auth-migration.
 
 ### Custom order lifecycle
 
-1. The customer signs in, enters first and last name, contact information, idea, requested ready-by date and time, allergy details, and optionally up to five reference photos.
-2. The form requires a requested ready-by date at least three days ahead and a requested time. There is no time-of-day restriction.
-3. With Supabase connected, photos upload to the private bucket and the order row is created with `Awaiting details`. The function emails the Admin Dashboard owner with request details and temporary photo links, and emails the customer a receipt.
+1. The customer signs in, enters first and last name, contact information, idea, requested ready-by date and time, allergy details, and up to five reference photos. Photos can be selected from the device, captured with a mobile camera, or chosen from the public Sukkar gallery. Selected photos can be removed before submission.
+2. The form requires a requested ready-by date at least three days ahead and a requested ready-by time.
+3. With Supabase connected, device and gallery photos upload to the private `order-reference-photos` bucket and the order row is created with `Awaiting details`. The function emails the Admin Dashboard owner with request details and temporary photo links, and emails the customer a receipt.
 4. The admin sees the request and photos, then accepts or rejects it. Acceptance alone sends no email. Rejection sends the customer an email.
 5. The admin proposes a price. The customer gets an email with a **View your order** button and a plain-text URL to My Orders, where they can accept or reject the price. The response is stored and emails the admin.
-6. On acceptance, status advances to `Preparing`. The admin chooses a collection date and time, defaulted to the customer's requested ready-by date and time but editable. Status becomes `Ready for collection`, and the customer sees the confirmed date and time in My Orders and by email.
-7. **Mark as collected** changes the order status to `Collected`. The customer and admin can each remove the completed order from their own list independently.
+6. Before status becomes `Preparing`, the customer can cancel from My Orders. The order becomes `Cancelled` and remains on both sides until each person removes it from their own list.
+7. On price acceptance, status advances to `Preparing`. The admin chooses a collection date and time, both defaulted to the customer's requested ready-by date and time but editable. Status becomes `Ready for collection`; the admin emails the confirmed schedule. Both the admin and customer see a Collection schedule box below the status journey, separate from the requested schedule.
+8. **Mark as collected** changes the order status to `Collected` and displays a green status bar. The customer and admin can each remove the completed order from their own list independently; removal on one side does not delete the other side's record. My Orders offers a review link after collection.
 
 The customer and admin see step journeys tailored to their role. The database status is shared, while journey labels and actions differ.
 
@@ -133,6 +134,8 @@ The customer and admin see step journeys tailored to their role. The database st
 - New reviews are unpublished until admin approval. Admin can show new reviews first, switch to all reviews, publish, hide, or delete. The public Reviews page displays six at a time, adds six with **Show more**, and can return to six with **Show less**.
 - Admin settings include public email, phone, address, map location (address or coordinates), and admin account email/password changes. Email changes may require confirmation from Supabase.
 - Signed-in customers can open the person icon in the navbar to change their account email or password on `/account`. Customer email changes may need confirmation through Supabase; local preview account updates stay in browser storage.
+- The custom order photo selector enforces a five-photo maximum across device uploads, mobile camera capture, and Sukkar gallery selections. It provides local previews and remove controls before submission. In connected mode, all submitted photos are stored as private order reference objects.
+- Customer cancellation is available only before the order enters `Preparing`. `Cancelled` and `Collected` orders have separate customer/admin dismissal state: dismissing on one side leaves the other side's view intact.
 - The home page map uses the saved map location; the address, map and footer are editable through the Admin Dashboard settings.
 - Contact information/social links and their placement are in the shared site components in `frontend/src/App.jsx`.
 
@@ -150,7 +153,7 @@ The customer and admin see step journeys tailored to their role. The database st
 | `admin_price_proposal` | Customer | Proposed price and My Orders link |
 | `admin_ready_collection` | Customer | Ready-for-collection update and time |
 
-Accepting a new order intentionally sends no email. Customer-facing admin messages are sent to the email saved in the order. Customer messages route to the current Sukkar email in `site_settings`; `reply_to` is set so the recipient can reply to the sender.
+Accepting a new order intentionally sends no email. Customer-facing admin messages are sent to the email saved in the order. Customer messages route to the current Sukkar email in `site_settings`; `reply_to` is set so the recipient can reply to the sender. The EmailJS Gmail service controls the sender mailbox separately, so changing the dashboard contact email does not change the from-address; reconnect the Gmail service in EmailJS to change that mailbox while keeping its Service ID.
 
 The EmailJS template needs `to_email`, `subject`, `reply_to`, and `message_html` (triple braces for HTML). The function also supplies `message_text`. Required Edge Function secrets are `EMAILJS_SERVICE_ID`, `EMAILJS_TEMPLATE_ID`, `EMAILJS_PUBLIC_KEY`, and `EMAILJS_PRIVATE_KEY`. Supabase supplies its own URL and key secrets to the function. Keep all provider private keys and Supabase service-role keys in Supabase Function Secrets. Never put them in this guide or the frontend.
 

@@ -29,12 +29,14 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 
 - Visitors can browse without an account. Customers must sign in or register before submitting a custom order or using My Orders. Registration collects first name, last name, email, and password. Password visibility can be toggled with an eye icon.
 - The custom order form collects first and last name, phone with country calling code, email, the date and time the customer wants the order ready by, idea description, allergy information, and up to five reference photos.
-- The collection date must be at least three days ahead and is selected from a calendar dropdown styled to match the site.
-- The customer chooses a requested time with the hour/minute/AM-PM wheel. Any time of day is allowed; the chosen time tells Sukkar when the customer hopes the order will be ready.
+- The requested ready-by date must be at least three days ahead and is selected from a calendar dropdown styled to match the site.
+- The customer chooses a requested ready-by time with the hour/minute/AM-PM wheel. This tells Sukkar when the customer needs the order to be ready.
 - Allergy information is a Yes/No list. Choosing Yes reveals a required field for allergy or dietary details.
 - The idea description prompt should guide customers to include chocolate and filling, colours, message, size, and occasion.
-- Reference photos are stored privately in Supabase Storage and available to the admin with the order. The new-order email to Sukkar includes temporary links to the attached photos.
-- My Orders shows the customer’s requested ready-by date and time, proposed or agreed price in SYP, and the confirmed collection date and time when the order is ready. Customer responses to a price proposal are made from this page.
+- Customers can select up to five reference photos from their device, take a photo on a mobile device, or choose existing photos from Sukkar's gallery. They can review and remove selected photos before submitting. Submitted photos are stored privately in Supabase Storage and available to the admin with the order; Sukkar's new-order email includes temporary links.
+- My Orders shows the customer’s requested ready-by date and time, proposed or agreed price in SYP, and the confirmed collection date and time when the order is ready. The Collection schedule box appears below the status journey. Customers can accept or decline a price proposal here.
+- Customers can cancel an order until its status becomes Preparing. A cancelled order remains visible with a Cancelled status until the customer removes it from My Orders.
+- Customers can remove a Cancelled or Collected order from their own list. This does not remove it from the Admin Dashboard. After collection, My Orders offers a link to write a review.
 - Signed-in customers can open the person icon in the top-right navigation bar to change their account email and password. Supabase email changes require confirmation; local preview changes apply only in that browser.
 
 ### Order journey and messages
@@ -44,19 +46,20 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 3. **Price proposal:** the admin sets a proposed price in SYP and emails the customer. The email links to My Orders, where the customer can accept or decline. Both parties receive an email about the customer’s response. A declined proposal can be deleted by the admin.
 4. **Preparation:** after the customer agrees to the price, the admin changes the order to Preparing.
 5. **Ready for collection:** the admin chooses a confirmed collection date and time, both defaulted to the customer's request. The admin can change either value before notifying the customer. My Orders and the collection email show the confirmed schedule.
-6. **Collected:** the admin uses **Mark as collected**. This removes the order from the active dashboard and the customer’s My Orders list.
+6. **Collected:** the admin uses **Mark as collected**. The order displays a green Collected status. The customer and admin can each remove it from their own list independently; removing it from one side does not delete it from the other.
 
 - The customer and admin see matching order progress, with completed steps marked, the current step highlighted, and declined or rejected outcomes identified.
-- The admin’s collection date and time are chosen with calendar and time controls, not free-form text.
+- The customer can cancel before preparation begins. Cancellation displays a Cancelled status; the order stays on both sides until independently removed from each list.
+- The admin’s collection date and time are chosen with calendar and time controls, not free-form text. Both values start from the customer's requested ready-by schedule and can be changed. When ready, both sides show the Collection schedule box below the status journey; it contains the confirmed collection date and time, while the requested schedule stays separate.
 - Customer questions about an order are emailed to Sukkar. Price proposals, rejections, and ready-for-collection updates are emailed to the customer. Email includes a button and a direct link to My Orders for the customer’s proposal response.
 - Payment takes place at collection. The site does not provide online payment or delivery checkout.
 
 ### Owner dashboard
 
 - Admin signs in at `/admin` to see customer requests, order details, status, price, requested ready-by date, and attached photos. Attached photos can be enlarged.
-- The dashboard displays the order journey with admin-appropriate status labels. Admin actions include accepting or rejecting a new request, proposing a price, preparing the order, seeing when the customer wants the order ready by, setting a confirmed collection date and time, marking it collected, and deleting declined orders.
+- The dashboard displays the order journey with admin-appropriate status labels. Admin actions include accepting or rejecting a new request, proposing a price, preparing the order, seeing when the customer wants the order ready by, setting a confirmed collection date and time, marking it collected, and removing cancelled or collected orders from the admin list.
 - Reviews appear below orders. The dashboard opens on new reviews; the admin can show or hide the full review list, publish, hide, or delete a review.
-- The admin can add gallery photos with a required name, description, and category, and can update existing photo names, descriptions, categories, and visibility. Gallery and dashboard use the same categories and photo details. If a category is deleted, its photos move to the default **Chocolate** category.
+- The admin can add gallery photos with a required name and category; the description is optional. The admin can update existing photo names, descriptions, categories, and visibility. Gallery and dashboard use the same categories and photo details. If a category is deleted, its photos move to the default **Chocolate** category.
 - Admin can create and manage gallery categories.
 - Admin can update the public email address, phone number, address, and map location. The map location field accepts an address or coordinates and controls the home page map and directions.
 - Admin can change the dashboard sign-in email and password. Email changes may require confirmation from Supabase.
@@ -86,10 +89,11 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 
 ## Acceptance checks
 
-- A visitor can browse public pages without signing in; a customer can register, sign in, and submit an order with up to five photos.
-- The order form enforces a three-day minimum for the requested ready-by date and the conditional allergy details field. It allows any time of day. Admin can set a confirmed collection date and time, defaulted to the customer's requested ready-by schedule and editable before sending the ready email.
+- A visitor can browse public pages without signing in; a customer can register, sign in, and submit an order with up to five photos from a device, mobile camera, or Sukkar's website gallery. Customers can remove a selected photo before submitting.
+- The order form enforces a three-day minimum for the requested ready-by date and the conditional allergy details field. Admin can set a confirmed collection date and time, defaulted to the customer's requested ready-by schedule and editable before sending the ready email.
 - Admin can accept or reject new requests before processing; acceptance sends no email. A rejected request, price proposal, customer response, and ready-for-collection update follow the email behavior described above.
 - Customer and admin order journeys show the same current status. Both sides show the requested ready-by date and time, and the admin-confirmed collection date and time once ready.
+- Customers can cancel before status becomes Preparing. Cancelled and Collected orders remain until removed from each side independently; removal on one side leaves the other side's record intact.
 - Admin can enlarge attached order photos, manage gallery details and categories, moderate reviews, update contact details and map location, and change dashboard email or password.
 - The public gallery reflects dashboard photo names, descriptions, categories, and visibility. Removing a category reassigns its photos to Chocolate.
 - The Reviews page displays six items initially and supports showing six more at a time and returning with Show less.

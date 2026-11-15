@@ -1277,7 +1277,7 @@ function Admin() {
             </div>
           </section>
           <section className="admin-section">
-            <AdminAccordionHeader id="gallery-photos" eyebrow="Gallery images" title="Add a photo" description="Add a name, description and category for the photos you upload." open={openAdminSection === 'gallery-photos'} onToggle={() => toggleAdminSection('gallery-photos')} />
+            <AdminAccordionHeader id="gallery-photos" eyebrow="Gallery images" title="Add a photo" description="Add a required name and category. A description is optional." open={openAdminSection === 'gallery-photos'} onToggle={() => toggleAdminSection('gallery-photos')} />
             <div id="gallery-photos-content" className="admin-section-content" hidden={openAdminSection !== 'gallery-photos'}>
             <div>
               <form className="admin-photo-form form-grid" onSubmit={addPhotos}>
@@ -1287,7 +1287,7 @@ function Admin() {
                     {galleryCategories.map((category) => <option key={category} value={category}>{category}</option>)}
                   </select>
                 </label>
-                <label className="full-field">Photo description<textarea name="description" required maxLength="300" rows="3" placeholder="Describe the treat, colours, details or occasion…" /></label>
+                <label className="full-field">Photo description (optional)<textarea name="description" maxLength="300" rows="3" placeholder="Describe the treat, colours, details or occasion…" /></label>
                 <label className="full-field upload-field">Choose photos<input name="photos" type="file" accept="image/*" multiple required /></label>
                 <button className="button" type="submit">Add to gallery <ArrowRight size={15} /></button>
               </form>

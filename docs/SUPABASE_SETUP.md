@@ -12,9 +12,9 @@ The site is built with React and JavaScript. The **Sukkar Chocolate** Supabase p
 
 ## What is connected
 
-- Customers must register or sign in before submitting a custom order. Orders and up to five reference images are saved to Supabase under the signed-in customer, then an email receipt goes to the customer and an order notification goes to Sukkar.
-- Customers can see their agreed price and collection time from the same browser that submitted the order. The tracking token is kept locally; the database only returns the status fields when both the order reference and token match.
-- The signed-in admin can view orders and private reference photos, set the agreed price and collection time, email order updates to customers, and remove a collected order. Accepting a new order sends no email.
+- Customers must register or sign in before submitting a custom order. Each order supports up to five photos from a device, mobile camera, or Sukkar's gallery; customers can remove selected photos before submitting. Submitted images are saved privately in Supabase Storage with the order, then an email receipt goes to the customer and an order notification goes to Sukkar.
+- Customers can see the requested ready-by date/time, agreed price, and confirmed collection date/time in My Orders. The confirmed Collection schedule box appears below the status journey when the order is ready.
+- Customers can cancel before the order enters Preparing. The signed-in admin can view orders and private reference photos, enlarge attached photos, set the agreed price and confirmed collection date/time, email order updates, mark orders collected, and remove cancelled or collected orders from the admin list. Removing an order from one side does not remove it from the other. Accepting a new order sends no email.
 - Gallery categories, uploaded gallery photos, edits to bundled product photo names/descriptions/categories/visibility, customer reviews, and public email/phone/address details are shared through Supabase. New reviews wait for approval in the dashboard.
 - Email delivery uses the `send-site-email` Supabase Edge Function and EmailJS connected to Sukkar’s Gmail account. See [`EMAIL_SETUP.md`](EMAIL_SETUP.md) to connect Gmail and add the server-side secrets.
 - The existing bundled product images have been copied into the public gallery bucket. The gallery prefers those Supabase copies and keeps the bundled files as a local fallback.

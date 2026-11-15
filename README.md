@@ -21,7 +21,7 @@ For a Supabase-connected local run, copy `frontend/.env.example` to `frontend/.e
 ## Pages
 
 - Home, story, gallery, and reviews
-- Custom order form, customer order status, and contact form
+- Custom order form, customer order status, and contact form. Customers can attach up to five photos from a device, mobile camera, or Sukkar gallery; cancel before preparation; and see the requested ready-by and confirmed collection schedules separately.
 - Admin Dashboard at `/admin`
 
 ## Guides

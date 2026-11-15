@@ -1,74 +1,402 @@
-%PDF-1.4
-%“Œ‹ž ReportLab Generated PDF document (opensource)
+%PDF-1.3
+%âãÏÓ
 1 0 obj
 <<
-/F1 2 0 R /F2 3 0 R
+/Producer (pypdf)
 >>
 endobj
 2 0 obj
 <<
-/BaseFont /Helvetica /Encoding /WinAnsiEncoding /Name /F1 /Subtype /Type1 /Type /Font
+/Type /Pages
+/Count 1
+/Kids [ 4 0 R ]
 >>
 endobj
 3 0 obj
 <<
-/BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding /Name /F2 /Subtype /Type1 /Type /Font
+/Type /Catalog
+/Pages 2 0 R
 >>
 endobj
 4 0 obj
 <<
-/Contents 8 0 R /MediaBox [ 0 0 1200 675 ] /Parent 7 0 R /Resources <<
-/Font 1 0 R /ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
->> /Rotate 0 /Trans <<
-
->> 
-  /Type /Page
+/Contents 5 0 R
+/MediaBox [ 0 0 1200 675 ]
+/Resources <<
+/Font 6 0 R
+/ProcSet [ /PDF /Text /ImageB /ImageC /ImageI ]
+>>
+/Rotate 0
+/Trans <<
+>>
+/Type /Page
+/Parent 2 0 R
 >>
 endobj
 5 0 obj
 <<
-/PageMode /UseNone /Pages 7 0 R /Type /Catalog
+/Length 10147
 >>
+stream
+1 0 0 1 0 0 cm  BT /F1 12 Tf 14.4 TL ET
+.980392 .968627 .941176 rg
+n 0 0 1200 675 re f*
+.223529 .168627 .141176 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 62 646 Tm (SUKKAR CHOCOLATE) Tj T* ET
+.466667 .419608 .380392 rg
+BT /F1 8 Tf 9.6 TL ET
+BT 1 0 0 1 1056.648 646 Tm (WEBSITE OVERVIEW) Tj T* ET
+.223529 .168627 .141176 rg
+BT /F2 27 Tf 32.4 TL ET
+BT 1 0 0 1 62 598 Tm (Sukkar Chocolate Website) Tj T* ET
+q
+1 0 0 1 62 527 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 21 Tm /F1 11 Tf 16 TL (A responsive website for Sukkar Chocolate, a handmade chocolate business. It helps customers explore the gallery, request personalized treats, and follow each order, while giving the owner tools to manage orders and) Tj T* (site content.) Tj T* ET
+Q
+Q
+.870588 .843137 .8 RG
+.8 w
+n 62 532 m 1138 532 l S
+.870588 .843137 .8 RG
+n 414 58 m 414 520 l S
+.870588 .843137 .8 RG
+n 786 58 m 786 520 l S
+q
+1 0 0 1 62 497 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 3 Tm /F2 14 Tf 17 TL (Website and customer features) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 469 cm
+q
+.713725 .356863 .313725 rg
+BT 1 0 0 1 0 2.5 Tm /F2 9.5 Tf 12 TL (Public website) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 438.6 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Explore:) Tj /F1 8.7 Tf ( Home, Our Story, Gallery, Reviews, and Contact pages, with a map on) Tj T* (Home and a footer link to it.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 408.2 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Gallery:) Tj /F1 8.7 Tf ( Browse chocolate photos by category, with matching names and) Tj T* (descriptions.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 377.8 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Reviews:) Tj /F1 8.7 Tf ( Customers choose 1 to 5 stars; approved reviews show six at a time, with) Tj T* (Show more and Show less controls.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 347.4 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Contact:) Tj /F1 8.7 Tf ( Email address, location, Instagram, Facebook, and a form that emails) Tj T* (Sukkar.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 327.4 cm
+q
+.713725 .356863 .313725 rg
+BT 1 0 0 1 0 2.5 Tm /F2 9.5 Tf 12 TL (Custom orders) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 309.2 cm
+q
+BT 1 0 0 1 0 3.5 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Account:) Tj /F1 8.7 Tf ( Sign in or register before ordering.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 278.8 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Request details:) Tj /F1 8.7 Tf ( First/last name, contact details, idea, allergies, and up to five photos) Tj T* (from a device, mobile camera, or Sukkar's gallery; remove before sending.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 236.2 cm
+q
+BT 1 0 0 1 0 27.9 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Requested ready-by:) Tj /F1 8.7 Tf ( Choose a date at least three days ahead and the time you) Tj T* (need the order to be with you. Sukkar aims to have it) Tj T* (ready before then.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 62 193.6 cm
+q
+BT 1 0 0 1 0 27.9 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (My Orders:) Tj /F1 8.7 Tf ( Follow progress, price, requested and confirmed schedules, and respond to) Tj T* (price proposals. Cancel before preparation starts; remove cancelled or) Tj T* (collected orders from your own list.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 497 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 3 Tm /F2 14 Tf 17 TL (Admin Dashboard) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 469 cm
+q
+.713725 .356863 .313725 rg
+BT 1 0 0 1 0 2.5 Tm /F2 9.5 Tf 12 TL (Orders and email updates) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 438.6 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Review:) Tj /F1 8.7 Tf ( Admin sees order details and can enlarge attached photos, then accepts or) Tj T* (rejects before processing. Acceptance sends no email.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 408.2 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Price:) Tj /F1 8.7 Tf ( Admin sends a price proposal in SYP; the customer accepts or declines in My) Tj T* (Orders. Each side receives an email about the response.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 353.4 cm
+q
+BT 1 0 0 1 0 40.1 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Prepare and collect:) Tj /F1 8.7 Tf ( After agreement, admin marks Preparing and uses the) Tj T* (customer's requested ready-by date and time as a guide. Admin chooses the) Tj T* (confirmed collection date and time; both default to the customer's) Tj T* (requested ready-by schedule and can be changed.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 310.8 cm
+q
+BT 1 0 0 1 0 27.9 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Collection update:) Tj /F1 8.7 Tf ( The confirmed collection schedule is emailed to the customer) Tj T* (and shown in a Collection schedule box below the status journey on both sides. The) Tj T* (requested ready-by details remain visible separately.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 280.4 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Status journey:) Tj /F1 8.7 Tf ( Both see matching stages. Admin marks orders collected.) Tj T* (Customers can cancel before preparation; each side removes final orders alone.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 250 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Messages:) Tj /F1 8.7 Tf ( New requests notify Sukkar and the customer; proposals, declines, and) Tj T* (ready updates are emailed. Customer questions go to Sukkar.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 230 cm
+q
+.713725 .356863 .313725 rg
+BT 1 0 0 1 0 2.5 Tm /F2 9.5 Tf 12 TL (Manage the website) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 199.6 cm
+q
+BT 1 0 0 1 0 15.7 Tm -0.062545 Tw 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Gallery:) Tj /F1 8.7 Tf ( Add and edit photos, names, descriptions, categories, and visibility; manage) Tj T* 0 Tw (categories.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 169.2 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Reviews and details:) Tj /F1 8.7 Tf ( Publish, hide, or remove reviews; update public contact) Tj T* (details and map location.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 434 151 cm
+q
+BT 1 0 0 1 0 3.5 Tm 12.2 TL /F1 8.7 Tf .223529 .168627 .141176 rg (- ) Tj /F2 8.7 Tf (Admin account:) Tj /F1 8.7 Tf ( Change the dashboard sign-in email and password.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 806 497 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 3 Tm /F2 14 Tf 17 TL (Short order journey) Tj T* ET
+Q
+Q
+.713725 .356863 .313725 rg
+n
+827 471 m
+827 476.5228 822.5228 481 817 481 c
+811.4772 481 807 476.5228 807 471 c
+807 465.4772 811.4772 461 817 461 c
+822.5228 461 827 465.4772 827 471 c
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 814.498 468 Tm (1) Tj T* ET
+q
+1 0 0 1 837 469 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 2.8 Tm /F2 9.2 Tf 12 TL (Explore) Tj T* ET
+Q
+Q
+q
+1 0 0 1 837 454.8 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 3.5 Tm /F1 8.7 Tf 12.2 TL (Browse Sukkar, its chocolate gallery, reviews, and map.) Tj T* ET
+Q
+Q
+.713725 .356863 .313725 rg
+n
+827 431.8 m
+827 437.3228 822.5228 441.8 817 441.8 c
+811.4772 441.8 807 437.3228 807 431.8 c
+807 426.2772 811.4772 421.8 817 421.8 c
+822.5228 421.8 827 426.2772 827 431.8 c
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 814.498 428.8 Tm (2) Tj T* ET
+q
+1 0 0 1 837 429.8 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 2.8 Tm /F2 9.2 Tf 12 TL (Send a request) Tj T* ET
+Q
+Q
+q
+1 0 0 1 837 403.4 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 15.7 Tm /F1 8.7 Tf 12.2 TL (Sign in, describe the idea and allergies, and select up to five photos) Tj T* (from a device, phone camera, or Sukkar gallery. Remove photos before) Tj T* (sending, then choose the requested ready-by date and time.) Tj T* ET
+Q
+Q
+.713725 .356863 .313725 rg
+n
+827 380.4 m
+827 385.9228 822.5228 390.4 817 390.4 c
+811.4772 390.4 807 385.9228 807 380.4 c
+807 374.8772 811.4772 370.4 817 370.4 c
+822.5228 370.4 827 374.8772 827 380.4 c
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 814.498 377.4 Tm (3) Tj T* ET
+q
+1 0 0 1 837 378.4 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 2.8 Tm /F2 9.2 Tf 12 TL (Agree on a price) Tj T* ET
+Q
+Q
+q
+1 0 0 1 837 352 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 15.7 Tm /F1 8.7 Tf 12.2 TL (Sukkar reviews the request and proposes a price in SYP. The customer) Tj T* (accepts or declines in My Orders.) Tj T* ET
+Q
+Q
+.713725 .356863 .313725 rg
+n
+827 329 m
+827 334.5228 822.5228 339 817 339 c
+811.4772 339 807 334.5228 807 329 c
+807 323.4772 811.4772 319 817 319 c
+822.5228 319 827 323.4772 827 329 c
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 814.498 326 Tm (4) Tj T* ET
+q
+1 0 0 1 837 327 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 2.8 Tm /F2 9.2 Tf 12 TL (Prepare and confirm) Tj T* ET
+Q
+Q
+q
+1 0 0 1 837 288.4 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 27.9 Tm /F1 8.7 Tf 12.2 TL (After agreement, Sukkar prepares the order and sets the collection date and) Tj T* (time. The requested date and time are the starting point and can be) Tj T* (changed. The customer receives the confirmed schedule by email.) Tj T* ET
+Q
+Q
+.713725 .356863 .313725 rg
+n
+827 265.4 m
+827 270.9228 822.5228 275.4 817 275.4 c
+811.4772 275.4 807 270.9228 807 265.4 c
+807 259.8772 811.4772 255.4 817 255.4 c
+822.5228 255.4 827 259.8772 827 265.4 c
+f*
+1 1 1 rg
+BT /F2 9 Tf 10.8 TL ET
+BT 1 0 0 1 814.498 262.4 Tm (5) Tj T* ET
+q
+1 0 0 1 837 263.4 cm
+q
+.223529 .168627 .141176 rg
+BT 1 0 0 1 0 2.8 Tm /F2 9.2 Tf 12 TL (Collect and enjoy) Tj T* ET
+Q
+Q
+q
+1 0 0 1 837 249.2 cm
+q
+.466667 .419608 .380392 rg
+BT 1 0 0 1 0 3.5 Tm /F1 8.7 Tf 12.2 TL (Pick up the finished treat and pay at collection.) Tj T* ET
+Q
+Q
+q
+1 0 0 1 806 210.8 cm
+q
+BT 1 0 0 1 0 15.7 Tm 12.2 TL /F2 8.7 Tf .223529 .168627 .141176 rg (No online payment or delivery checkout.) Tj /F1 8.7 Tf ( Payment is made when the customer) Tj T* (collects the order.) Tj T* ET
+Q
+Q
+.870588 .843137 .8 RG
+n 62 38 m 1138 38 l S
+.466667 .419608 .380392 rg
+BT /F1 8 Tf 9.6 TL ET
+BT 1 0 0 1 62 21 Tm (Sukkar Chocolate  |  Website and customer experience) Tj T* ET
+BT 1 0 0 1 1113.536 21 Tm (01 / 01) Tj T* ET
+ 
+
+endstream
 endobj
 6 0 obj
 <<
-/Author (Sukkar Chocolate) /CreationDate (D:20261115163520+00'00') /Creator (anonymous) /Keywords () /ModDate (D:20261115163520+00'00') /Producer (ReportLab PDF Library - \(opensource\)) 
-  /Subject (Website overview, main features, and customer order journey) /Title (Sukkar Chocolate Website - Overview and Features) /Trapped /False
+/F1 7 0 R
+/F2 8 0 R
 >>
 endobj
 7 0 obj
 <<
-/Count 1 /Kids [ 4 0 R ] /Type /Pages
+/BaseFont /Helvetica
+/Encoding /WinAnsiEncoding
+/Name /F1
+/Subtype /Type1
+/Type /Font
 >>
 endobj
 8 0 obj
 <<
-/Filter [ /ASCII85Decode /FlateDecode ] /Length 3165
+/BaseFont /Helvetica-Bold
+/Encoding /WinAnsiEncoding
+/Name /F2
+/Subtype /Type1
+/Type /Font
 >>
-stream
-GauHN>BAQ-&q9SYfLN?E0YCafSfEgGB%kaPXOBia+VKqTo:ck^*HfYg5J%;bU1?l>-5qqX/<D!Y_!\ZRG*d<d`]o7YV^9.U)8,pe!QToI!Z^+g@J0q2cRu:E[_9T_.uE&s:[lt3C_rQ%7AXX9D&^>?J4@E8k6oJPLReu--]VIc^u*M!@\96)#qdJS^p[\s!,jr2/YNQGn%l)Yak_Grs8DL%>lAheFn<Z8m.r)sI>-A#]HTT2!s^C7$f&\@?Ws)V95l"#$&KB\(#[_1BSCojMtqc!rpI\j)K,Pgrq,r?ld%pQcgJ^\8<@JFDBqaS]ogS<]kH>=<Mss_=p^h_>ii(-8G_LY36l`q*dI/72P&]NT#Ga&G.&-!ld:S:QY7#>Xt,c%89iW^@8St&\>1PZ=G\LX74'2F(HUHP]TPlin=bQ$/Ck0VNG@cW2@ANSF]"pUgQdGg-jnXDV^V#+NDqL2nVOgi7K0L7TP^K<(!<I1P[5's,=ms"TPcO<^uHmtE/+96YEh:RrE/%G[]U!ls.L-l=A&Ori]26&BjJ-PC9<%&s2$uN:41*=_29I!M!<N4]Z>_$^LA!A,%O9_BZq)/a,@K2^tku0(&/&d+N>S[E'k[D6'U$u2E/kII8ek61$(tT%;`!ql%7s#*>u[,!uTmBB)l&,;E&:H!sS&5pLD7bk?XblHXRo*&cNuKS>TJ048IT#*>X.:R2:/&!U-=AE\8q`0PuCU@I_Y"`->dX&PcW#RXN_,8Chbi_;l'0:g032H?-.8pE.l3:G[RZ:chUcfc\GlRP=PQ#L6-9+d\5oLf]BSOWm[8>^5QhDc_l]iu4arG8iDTT%"M$c(bFD\Sfe%7:+d`9(OE$gfKI'>02S0>[$e\ojTg@U6g.(5H:E$Y?,jN/!t5u`QKRnMUbO\2I2G(<hbi4jYEg`-==5BP)4=SR*kjnA%OmW_&M.7irD4OArgTW]<UhGhKQ&TgTOH^%bWB5eVZi0"0l/ko`HsLULsS76B4t>2\7R0]$1OYXI;6;kdGEYW]P0a7"qEcH3+F!9kL=.8aJ8fli;2!$G\??+&S%L7:(Mc1*dP*KVCpqTUi"MTgJ]/)c9Ah(Qljc?/JG)oJ\)-$`\tP/)rN@JVFu]aM^<g8loh-F"Wt\Yo!52Ui^bp?`%PNWQ%o=nmquMKo8BU/TXA)0p`9b%'LbDm7"#_Cb'fHHMqC"nP$B%hN9BAncnst%>DS%;8nbJV39P2=;;9c9:]JrULX^W-3Z_l-u-:UjOZ%_^&>:gUQ&Le%V,`MUuC[bRbW'Pd7bc$ZB8/@dF_#<oA$R&gp;ChH*6>$LQASler_EW'!)I<NU`0D,68Yo13ukB8X\tGOV7,"OaL5.AD6:J/Za6P%E2;f8XAnX;*mVC5nfN@&%+idYo'E]-*p;h:[?.E5H2qhZ&`,!@HSY.%+2;9&!<<I`([7cFd&^/-REojBu3TD2.X-HWRY_^&7h=A%$@Bc>drd[R8!-!-W@5TP.If].$!W9Vs*Y5n_FXE]U;TsGqGKOUr`.\F>pgF>1<L`9b9G4UFc8lU-!ddO5N?8-.431?Q!s-7)AR5(!*Bdc'!G\:HLD@Tnb)5V)%bAZ%oi&jAuJCl<"qKT-EERQf4)4$/ujLX%YfZCSdTAL@;[V7+Si#fFuE%2':hH:8>ES\*qt/qOD#mT?\So4o"OR=)7_9E(tVJ6<Zl\9I1<-=e^g&k4PT/DTZ,G$0!+^GtC,I::iR'4f?0X>*sQZ:rSgu(3E5[!$l-4RHE#_ZP:Zt!^-_HA#dqdcUQtgLFONW3g+$YbktXK=l,$]+U>+!;g!jcenCBmGNS2@3P"49&cQKe3f@VE0N6-\):`5QoK$*fCGBU)n?q+0PoNFqG$$#=mbE5WP>Ff]Qa#kJ!Ja;)*=9DK;`nQZ@LF'.@6!3m=0#ua'A+sq+3ngP,3dJR7MJe[M.lTT'\)9'D3q=ZZj+<j#F`pd>FY==YCidO`$_j-8,j\mXAOdNn+%e5Xua2a$>=$Rf(@0Pj?Ke4cgS00+$-hol<4bdosnf?Mm\aMMIhgGh3_:.@hubj5E%S,T'g1?dk2$S]4gp^=8<iL^>6LZ7Be0'mRNdJ^DjrMZ/&CgNb&]9.OV4G'NR5j#+Q?l295>Or1--KIPBkGROU1IU]+(%V-*J;lSGPsgt0ZW2'n0U.:Ke#Q%<rtpi2o#-LVIA$@%8&O3$G/VMDEt[W:EaWbu!]J/G"EXKimkip)-\3IYd3Bj/697!8hj-=P^!irh#?r_5%T-aIP<Dt@gNa)1laf_c/dU-LrP)\>#U*rNuiqW[6&$18%coqWDrG2h`/$rbS=rotVL&hAi15f@enB=*12q]sG&OQF)*iE/ri$S%5$(F0$N_j!3C_O;d*8U#^"n?%7/;TdtQ&q1iWH*>DERaj-&Dq1Lk32lEZ8u_$&:Wi1Q!lXhP_$2)I#(HF\#q0t/j)So@'AZ*5k_J\^B:e_9c`Lk&.\>PBa/pLiFI2/!L@sjo)e=>#gNVWu#E9g-mb'jH-b2ub!f#1VnN=uZ$[1r[RB&F%k*k.#d>&C@rWM#q^jYm.e,-iT`cm'XNc6?M<-5e?K?=M*QU/Eh+fKK!@Ab2:(He;jQ0hcS*iLJodIZVR!*#hRQdcK1f69,Lg&-jG600*lPoY&\cl#)k8\#C?H=F2%PHaW;W/pa\#V1\=4,,7+k'#;N6.BgL6NO@F-+Q(G[9tnag\,@1IZA3D;;[?o06D0.V.k^N]8&EM'D=1R\2?OBksB@VL@Kt-T#5^_ZFg5'!k4Y[>=6p)/m:_/XC'kq;!/"e%N?ep;:KlbgR%\b*-GPq:1iZjaerS144a/>5<fLebJOC3_;SQN8.G.V62=C8*mNgD0PW@H5C+Ab%NQ,cBs);5qabdVlt'^HCPXh'7=aZYd07j/O@CD^518f%Ru^c@V!0L<;E([ahq=*G<6SM',WLf@,jsl482CErSZc%#lbft$5W81OEgCe<2G`f;jb>D<F%&D_h;eQ?H8i'\eF=6.Z2b\N_;InBA,#fU0"5h-P2#n;,NEi^*7mK*TW<]6rZLIuc:Xu.ou=ZChTKkUc/Z>9riUq3jm86Oc&VY#o;$T/n+`u:^Zb0MmXl!cnb4$LI3KBi04g<o:Np&fr6$,U+2I*\)"QEb@NJkCSVb81NZ<-M3t/]gD$SpL4j5&,ir=8hDFj~>endstream
 endobj
 xref
 0 9
 0000000000 65535 f 
-0000000061 00000 n 
-0000000102 00000 n 
-0000000209 00000 n 
-0000000321 00000 n 
-0000000515 00000 n 
-0000000583 00000 n 
-0000000939 00000 n 
-0000000998 00000 n 
+0000000015 00000 n 
+0000000054 00000 n 
+0000000113 00000 n 
+0000000162 00000 n 
+0000000352 00000 n 
+0000010552 00000 n 
+0000010593 00000 n 
+0000010700 00000 n 
 trailer
 <<
-/ID 
-[<7e4646db56abc1340af7eb7b341ff7fb><7e4646db56abc1340af7eb7b341ff7fb>]
-% ReportLab generated PDF document -- digest (opensource)
-
-/Info 6 0 R
-/Root 5 0 R
 /Size 9
+/Root 3 0 R
+/Info 1 0 R
 >>
 startxref
-4254
+10812
 %%EOF
