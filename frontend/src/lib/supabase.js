@@ -163,7 +163,7 @@ export async function createRemoteOrder(order, files, customerSession) {
     photos.push(objectPath);
   }
   const photoUrls = await Promise.all(photos.map((path) => signedCustomerOrderPhoto(path, customerSession)));
-  await request('/rest/v1/orders', { method: 'POST', token: customerSession.access_token, body: { id: order.id, tracking_token: token, customer_user_id: customerSession.user.id, customer_first_name: order.firstName, customer_last_name: order.lastName, customer_name: order.name, phone: order.phone, email: order.email, description: order.description, collection_date: order.date, confirmed_collection_date: null, collection_time: null, allergies: order.allergies, photo_paths: photos, status: 'Awaiting details' }, headers: { Prefer: 'return=minimal' } });
+  await request('/rest/v1/orders', { method: 'POST', token: customerSession.access_token, body: { id: order.id, tracking_token: token, customer_user_id: customerSession.user.id, customer_first_name: order.firstName, customer_last_name: order.lastName, customer_name: order.name, phone: order.phone, email: order.email, description: order.description, collection_date: order.date, preferred_collection_time: order.preferredPickupTime, confirmed_collection_date: null, collection_time: null, allergies: order.allergies, photo_paths: photos, status: 'Awaiting details' }, headers: { Prefer: 'return=minimal' } });
   return { ...order, trackingToken: token, photoPaths: photos, photoUrls };
 }
 
@@ -189,14 +189,14 @@ export async function dismissFinalOrder(orderId, session) {
 export async function listRemoteOrders(session) {
   session = await freshSession(session);
   const rows = await request('/rest/v1/orders?select=*&admin_hidden=eq.false&order=created_at.desc', { token: session.access_token });
-  return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, phone: row.phone, email: row.email, description: row.description, date: row.collection_date, pickupDate: row.confirmed_collection_date || row.collection_date, allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', pickupTime: row.collection_time || '', status: row.status, createdAt: row.created_at }));
+  return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, phone: row.phone, email: row.email, description: row.description, date: row.collection_date, pickupDate: row.confirmed_collection_date || row.collection_date, allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', preferredPickupTime: row.preferred_collection_time || '', pickupTime: row.collection_time || row.preferred_collection_time || '', status: row.status, createdAt: row.created_at }));
 }
 
 export async function listCustomerOrders(session) {
   session = await freshCustomerSession(session);
-  const fields = 'id,customer_first_name,customer_last_name,customer_name,description,collection_date,confirmed_collection_date,allergies,photo_paths,agreed_cost,collection_time,status,created_at';
+  const fields = 'id,customer_first_name,customer_last_name,customer_name,description,collection_date,preferred_collection_time,confirmed_collection_date,allergies,photo_paths,agreed_cost,collection_time,status,created_at';
   const rows = await request(`/rest/v1/orders?select=${fields}&customer_user_id=eq.${encodeURIComponent(session.user.id)}&customer_hidden=eq.false&order=created_at.desc`, { token: session.access_token });
-  return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, description: row.description, date: row.collection_date, pickupDate: row.confirmed_collection_date || row.collection_date, allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', pickupTime: row.collection_time || '', status: row.status, createdAt: row.created_at }));
+  return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, description: row.description, date: row.collection_date, pickupDate: row.confirmed_collection_date || row.collection_date, preferredPickupTime: row.preferred_collection_time || '', allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', pickupTime: row.collection_time || row.preferred_collection_time || '', status: row.status, createdAt: row.created_at }));
 }
 
 export async function updateRemoteOrder(id, patch, session) {

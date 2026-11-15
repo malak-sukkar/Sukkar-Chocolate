@@ -28,12 +28,13 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 ### Customer accounts and custom orders
 
 - Visitors can browse without an account. Customers must sign in or register before submitting a custom order or using My Orders. Registration collects first name, last name, email, and password. Password visibility can be toggled with an eye icon.
-- The custom order form collects first and last name, phone with country calling code, email, requested collection date, idea description, allergy information, and up to five reference photos.
+- The custom order form collects first and last name, phone with country calling code, email, requested collection date and time, idea description, allergy information, and up to five reference photos.
 - The collection date must be at least three days ahead and is selected from a calendar dropdown styled to match the site.
+- The customer chooses a requested time with the hour/minute/AM-PM wheel, between 10:00 AM and 10:00 PM. This lets Sukkar know when the customer hopes the order will be ready.
 - Allergy information is a Yes/No list. Choosing Yes reveals a required field for allergy or dietary details.
 - The idea description prompt should guide customers to include chocolate and filling, colours, message, size, and occasion.
 - Reference photos are stored privately in Supabase Storage and available to the admin with the order. The new-order email to Sukkar includes temporary links to the attached photos.
-- My Orders shows the customer’s requested collection date, proposed or agreed price in SYP, and the confirmed collection date and time when the order is ready. Customer responses to a price proposal are made from this page.
+- My Orders shows the customer’s requested collection date and time, proposed or agreed price in SYP, and the confirmed collection date and time when the order is ready. Customer responses to a price proposal are made from this page.
 - Signed-in customers can open the person icon in the top-right navigation bar to change their account email and password. Supabase email changes require confirmation; local preview changes apply only in that browser.
 
 ### Order journey and messages
@@ -42,7 +43,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 2. **Admin review:** the admin accepts or rejects the request before further processing. Accepting sends no message. Rejecting sends an email to the customer.
 3. **Price proposal:** the admin sets a proposed price in SYP and emails the customer. The email links to My Orders, where the customer can accept or decline. Both parties receive an email about the customer’s response. A declined proposal can be deleted by the admin.
 4. **Preparation:** after the customer agrees to the price, the admin changes the order to Preparing.
-5. **Ready for collection:** the admin chooses a confirmed collection date and time, defaulted to the date the customer requested. The admin can change the date before notifying the customer. My Orders and the collection email show the confirmed date and time.
+5. **Ready for collection:** the admin chooses a confirmed collection date and time, both defaulted to the customer's request. The admin can change either value before notifying the customer. My Orders and the collection email show the confirmed schedule.
 6. **Collected:** the admin uses **Mark as collected**. This removes the order from the active dashboard and the customer’s My Orders list.
 
 - The customer and admin see matching order progress, with completed steps marked, the current step highlighted, and declined or rejected outcomes identified.
@@ -53,7 +54,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 ### Owner dashboard
 
 - Admin signs in at `/admin` to see customer requests, order details, status, price, requested collection date, and attached photos. Attached photos can be enlarged.
-- The dashboard displays the order journey with admin-appropriate status labels. Admin actions include accepting or rejecting a new request, proposing a price, preparing the order, setting a confirmed collection date and time, marking it collected, and deleting declined orders.
+- The dashboard displays the order journey with admin-appropriate status labels. Admin actions include accepting or rejecting a new request, proposing a price, preparing the order, seeing the customer's requested date and time, setting a confirmed collection date and time, marking it collected, and deleting declined orders.
 - Reviews appear below orders. The dashboard opens on new reviews; the admin can show or hide the full review list, publish, hide, or delete a review.
 - The admin can add gallery photos with a required name, description, and category, and can update existing photo names, descriptions, categories, and visibility. Gallery and dashboard use the same categories and photo details. If a category is deleted, its photos move to the default **Chocolate** category.
 - Admin can create and manage gallery categories.
@@ -86,9 +87,9 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 ## Acceptance checks
 
 - A visitor can browse public pages without signing in; a customer can register, sign in, and submit an order with up to five photos.
-- The order form enforces the three-day minimum requested collection date and the conditional allergy details field. Admin can set a confirmed collection date and time, defaulted to the requested date and editable before sending the ready email.
+- The order form enforces the three-day minimum requested collection date, the 10:00 AM–10:00 PM requested time range, and the conditional allergy details field. Admin can set a confirmed collection date and time, defaulted to the customer's request and editable before sending the ready email.
 - Admin can accept or reject new requests before processing; acceptance sends no email. A rejected request, price proposal, customer response, and ready-for-collection update follow the email behavior described above.
-- Customer and admin order journeys show the same current status. Once ready, both sides show the admin-confirmed collection date and time.
+- Customer and admin order journeys show the same current status. Both sides show the requested date and time, and the admin-confirmed collection date and time once ready.
 - Admin can enlarge attached order photos, manage gallery details and categories, moderate reviews, update contact details and map location, and change dashboard email or password.
 - The public gallery reflects dashboard photo names, descriptions, categories, and visibility. Removing a category reassigns its photos to Chocolate.
 - The Reviews page displays six items initially and supports showing six more at a time and returning with Show less.
