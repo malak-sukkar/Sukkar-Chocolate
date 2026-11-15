@@ -15,7 +15,7 @@ create table if not exists public.orders (
   agreed_cost text,
   preferred_collection_time text,
   collection_time text,
-  status text not null default 'Awaiting details' check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection', 'Cancelled')),
+  status text not null default 'Awaiting details' check (status in ('Awaiting details', 'Accepted', 'Rejected', 'Awaiting price agreement', 'Price declined', 'Preparing', 'Ready for collection', 'Cancelled', 'Collected')),
   created_at timestamptz not null default now()
 );
 

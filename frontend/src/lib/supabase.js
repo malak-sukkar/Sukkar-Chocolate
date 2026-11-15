@@ -179,23 +179,23 @@ export async function cancelCustomerOrder(orderId, session) {
   return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'customer_cancel_order', orderId }, token: session.access_token });
 }
 
-export async function deleteCancelledOrder(orderId, session) {
+export async function deleteFinalOrder(orderId, session) {
   const isAdminSession = session?.user?.app_metadata?.role === 'admin';
   session = isAdminSession ? await freshSession(session) : await freshCustomerSession(session);
   if (!session?.access_token) throw new Error('Please sign in again before removing this order.');
-  return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'delete_cancelled_order', orderId }, token: session.access_token });
+  return request('/functions/v1/send-site-email', { method: 'POST', body: { type: 'delete_final_order', orderId }, token: session.access_token });
 }
 
 export async function listRemoteOrders(session) {
   session = await freshSession(session);
-  const rows = await request('/rest/v1/orders?select=*&status=neq.collected&order=created_at.desc', { token: session.access_token });
+  const rows = await request('/rest/v1/orders?select=*&order=created_at.desc', { token: session.access_token });
   return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, phone: row.phone, email: row.email, description: row.description, date: row.collection_date, allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', preferredPickupTime: row.preferred_collection_time || '', pickupTime: row.collection_time || '', status: row.status, createdAt: row.created_at }));
 }
 
 export async function listCustomerOrders(session) {
   session = await freshCustomerSession(session);
   const fields = 'id,customer_first_name,customer_last_name,customer_name,description,collection_date,allergies,photo_paths,agreed_cost,preferred_collection_time,collection_time,status,created_at';
-  const rows = await request(`/rest/v1/orders?select=${fields}&customer_user_id=eq.${encodeURIComponent(session.user.id)}&status=neq.collected&order=created_at.desc`, { token: session.access_token });
+  const rows = await request(`/rest/v1/orders?select=${fields}&customer_user_id=eq.${encodeURIComponent(session.user.id)}&order=created_at.desc`, { token: session.access_token });
   return rows.map((row) => ({ id: row.id, firstName: row.customer_first_name || '', lastName: row.customer_last_name || '', name: row.customer_name, description: row.description, date: row.collection_date, allergies: row.allergies, photoPaths: row.photo_paths || [], cost: row.agreed_cost || '', preferredPickupTime: row.preferred_collection_time || '', pickupTime: row.collection_time || '', status: row.status, createdAt: row.created_at }));
 }
 

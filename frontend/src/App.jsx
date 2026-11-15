@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, Trash2, UserPlus, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { cancelCustomerOrder, createRemoteOrder, deleteCancelledOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { cancelCustomerOrder, createRemoteOrder, deleteFinalOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -565,6 +565,7 @@ function Contact() {
 
 function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
   if (status === 'Cancelled') return <p className="order-cancelled-status" role="status">{admin ? 'Cancelled by customer' : 'You cancelled this order'}</p>;
+  if (status === 'Collected') return <p className="order-collected-status" role="status">Collected</p>;
   const declined = status === 'Price declined';
   const rejected = status === 'Rejected';
   const steps = admin ? ['Awaiting details', 'Accepted', 'Awaiting price agreement', 'Price agreed', 'Preparing', 'Ready for collection'] : ['Request received', 'Accepted', 'Price proposed', 'Price agreed', 'Preparing', 'Ready for collection'];
@@ -746,12 +747,12 @@ function MyOrders() {
       setCancellingOrder(null);
     }
   };
-  const removeCancelledOrder = async (order) => {
-    if (!window.confirm('Permanently remove this cancelled order from your order list?')) return;
+  const removeFinalOrder = async (order) => {
+    if (!window.confirm(`Permanently remove this ${order.status.toLowerCase()} order from your order list?`)) return;
     setRemovingOrder(order.id);
     setResponseError('');
     try {
-      if (supabaseReady) await deleteCancelledOrder(order.id, getCustomerSession());
+      if (supabaseReady) await deleteFinalOrder(order.id, getCustomerSession());
       const next = orders.filter((item) => item.id !== order.id);
       setOrders(next);
       write(STORAGE.orders, next);
@@ -775,7 +776,7 @@ function MyOrders() {
       {questionMessage && <p className="success-message" role="status">{questionMessage}</p>}
       <div className="my-orders">
         {orders.length ? orders.map((order) => <article className="order-card" id={`order-${order.id}`} key={order.id}>
-          <div className="order-card-top"><span className="eyebrow">{order.id}</span>{order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeCancelledOrder(order)} aria-label="Delete cancelled order" title="Delete cancelled order">{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}</div>
+          <div className="order-card-top"><span className="eyebrow">{order.id}</span>{['Cancelled', 'Collected'].includes(order.status) && <button className="cancelled-order-delete" type="button" disabled={removingOrder === order.id} onClick={() => removeFinalOrder(order)} aria-label={`Delete ${order.status.toLowerCase()} order`} title={`Delete ${order.status.toLowerCase()} order`}>{removingOrder === order.id ? <span className="delete-spinner" aria-hidden="true">…</span> : <Trash2 size={17}/>}</button>}</div>
           <h2>Made for {order.name}</h2><p>{order.description}</p>
           <div className="order-meta"><span>Collection date<strong>{formatDate(order.date)}</strong></span><span>{order.status === 'Awaiting price agreement' || order.status === 'Accepted' ? 'Proposed price' : 'Agreed price'}<strong>{order.cost ? formatPrice(order.cost) : 'To be agreed'}</strong></span>{order.preferredPickupTime && <span>{order.status === 'Ready for collection' ? 'Your preferred time' : 'Preferred time'}<strong>{order.preferredPickupTime}</strong></span>}{order.status === 'Ready for collection' && order.pickupTime && <span className="order-collection-time">Collection time<strong>{formatCollectionTime(order.pickupTime)}</strong></span>}{(order.photoPaths?.length || order.photoPreviews?.length) > 0 && <span>Photos<strong><OrderPhotos paths={order.photoPaths} previews={order.photoPreviews} customer/></strong></span>}</div>
           <OrderStatusJourney status={order.status} />
@@ -920,10 +921,20 @@ function Admin() {
     }
   };
 
-  const removeCancelledOrder = async (id) => {
-    if (!window.confirm('Permanently delete this cancelled order?')) return;
+  const markCollected = async (id) => {
     try {
-      if (supabaseReady && session) await deleteCancelledOrder(id, session);
+      if (supabaseReady && session) await updateRemoteOrder(id, { status: 'Collected' }, session);
+      update(id, 'status', 'Collected');
+    } catch (cause) {
+      setLoginError(cause.message || 'Could not mark the order as collected. Please try again.');
+    }
+  };
+
+  const removeFinalOrder = async (id) => {
+    const order = orders.find((item) => item.id === id);
+    if (!order || !window.confirm(`Permanently delete this ${order.status.toLowerCase()} order?`)) return;
+    try {
+      if (supabaseReady && session) await deleteFinalOrder(id, session);
       const next = orders.filter((order) => order.id !== id);
       setOrders(next);
       if (!supabaseReady) write(STORAGE.orders, next);
@@ -931,8 +942,6 @@ function Admin() {
       setLoginError(cause.message || 'Could not delete the cancelled order. Please try again.');
     }
   };
-
-  const markCollected = deleteOrder;
 
   const saveSettings = async (event) => {
     event.preventDefault();
@@ -1183,9 +1192,9 @@ function Admin() {
             <AdminAccordionHeader id="orders" eyebrow="Customer requests" title={<>Orders&nbsp;<span className="admin-count-badge">{orders.length}</span></>} open={openAdminSection === 'orders'} onToggle={() => toggleAdminSection('orders')} singleLineTitle />
             <div id="orders-content" className="admin-section-content" hidden={openAdminSection !== 'orders'}>
             {orders.length ? orders.map((order) => (
-              <article className={`admin-order${order.status === 'Cancelled' ? ' cancelled-admin-order' : ''}`} key={order.id}>
+              <article className={`admin-order${['Cancelled', 'Collected'].includes(order.status) ? ' removable-admin-order' : ''}`} key={order.id}>
                 <div className="admin-order-info">
-                  <div className="order-card-top"><span className="eyebrow">{order.id} · {new Date(order.createdAt || Date.now()).toLocaleDateString()}</span>{order.status === 'Cancelled' && <button className="cancelled-order-delete" type="button" onClick={() => removeCancelledOrder(order.id)} aria-label="Delete cancelled order" title="Delete cancelled order"><Trash2 size={17}/></button>}</div>
+                  <div className="order-card-top"><span className="eyebrow">{order.id} · {new Date(order.createdAt || Date.now()).toLocaleDateString()}</span>{['Cancelled', 'Collected'].includes(order.status) && <button className="cancelled-order-delete" type="button" onClick={() => removeFinalOrder(order.id)} aria-label={`Delete ${order.status.toLowerCase()} order`} title={`Delete ${order.status.toLowerCase()} order`}><Trash2 size={17}/></button>}</div>
                   <h3>{order.name}</h3><p>{order.description}</p>
                   <div className="order-meta">
                     <span>Phone<strong>{order.phone}</strong></span><span>Email<strong>{order.email}</strong></span>
@@ -1212,7 +1221,7 @@ function Admin() {
                     <button className="button" disabled={!normalizeTimeValue(order.pickupTime)} onClick={() => markReady(order)}>Ready to collect — email customer <Mail size={15} /></button>
                   </>}
                   {order.status === 'Ready for collection' && <button className="button" onClick={() => markCollected(order.id)}>Mark as collected <ArrowRight size={14} /></button>}
-                  {order.status === 'Rejected' && <button className="collected-button" onClick={() => markCollected(order.id)}>Remove declined order <X size={14} /></button>}
+                  {order.status === 'Rejected' && <button className="collected-button" onClick={() => deleteOrder(order.id)}>Remove declined order <X size={14} /></button>}
                 </div>
               </article>
             )) : <div className="empty-state">New customer requests will appear here.</div>}

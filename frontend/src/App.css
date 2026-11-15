@@ -208,11 +208,12 @@
 .cancelled-order-delete:hover{background:var(--rose);border-color:var(--rose);color:#fff}
 .cancelled-order-delete:focus-visible{outline:2px solid var(--rose);outline-offset:3px}
 .cancelled-order-delete:disabled{opacity:.5;cursor:wait}
-.admin-order.cancelled-admin-order{position:relative}
-.admin-order.cancelled-admin-order .order-card-top{padding-right:48px}
-.admin-order.cancelled-admin-order .order-card-top>.eyebrow{max-width:100%;overflow-wrap:anywhere}
-.admin-order.cancelled-admin-order .order-card-top .cancelled-order-delete{position:absolute;top:12px;right:12px}
+.admin-order.removable-admin-order{position:relative}
+.admin-order.removable-admin-order .order-card-top{padding-right:48px}
+.admin-order.removable-admin-order .order-card-top>.eyebrow{max-width:100%;overflow-wrap:anywhere}
+.admin-order.removable-admin-order .order-card-top .cancelled-order-delete{position:absolute;top:12px;right:12px}
 .order-cancelled-status{margin:16px 0 4px;padding:11px 14px;border-left:3px solid #9b514a;background:#f3e8e4;color:#7d403a;font-size:11px;font-weight:600}
+.order-collected-status{margin:16px 0 4px;padding:11px 14px;border-left:3px solid #668d5f;background:#e8f0e4;color:#42653e;font-size:11px;font-weight:600}
 .admin-accordion-toggle.single-line>span{white-space:nowrap}
 @media(max-width:600px){.admin-section-title{flex-direction:column;align-items:stretch;gap:8px}.admin-section-action{align-self:flex-start}.admin-section h2{font-size:27px}}
 .review-stars{font-size:20px;gap:3px;color:#ead9a4}
