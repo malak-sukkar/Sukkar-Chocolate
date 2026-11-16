@@ -20,6 +20,8 @@ The website sends contact messages and order updates through a Supabase Edge Fun
    - `EMAILJS_PRIVATE_KEY`
 6. EmailJS server API access is enabled, with private-key protection kept on. Sukkar’s receiving email is saved in the website settings, and the sending function is deployed.
 
+The email function is separate from `delete-customer-account`, which handles customer account deletion and does not use EmailJS. See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) for that function's role and deployment note.
+
 The email address saved in the Admin Dashboard controls where customer messages arrive and the reply-to address on customer emails. The actual sender address is the Gmail account connected to the EmailJS service. To change the sender, reconnect that Gmail account in EmailJS and keep the existing Service ID; changing the dashboard contact email alone does not change the sender mailbox.
 
 Keep the EmailJS private key in Supabase Secrets. Do not put it in the website files, GitHub, or a message. The website email flow uses one template for contact messages and all order updates.

@@ -59,7 +59,7 @@ Without those two environment values, the app uses local preview mode. You can a
 | `/custom` | Custom order form | `CustomOrder` in `frontend/src/App.jsx` |
 | `/contact` | Email contact form and contact details | `Contact` in `frontend/src/App.jsx` |
 | `/my-orders` | Customer order status and price response | `MyOrders` in `frontend/src/App.jsx` |
-| `/account` | Customer email/password settings | `CustomerAccount` in `frontend/src/App.jsx`; opened from the person icon in the navbar |
+| `/account` | Customer email/password settings and account deletion | `CustomerAccount` in `frontend/src/App.jsx`; opened from the person icon in the navbar |
 | `/sign-in`, `/register` | Customer authentication | `CustomerAuth` in `frontend/src/App.jsx` |
 | `/admin` | Admin sign-in and Admin Dashboard | `Admin` in `frontend/src/App.jsx` |
 
@@ -71,6 +71,7 @@ Most page behavior and shared UI components currently live in the large `fronten
 - `backend/supabase/schema.sql` — database schema, RLS policies, helper functions, storage buckets/policies, and seed categories.
 - `backend/supabase/customer-auth-migration.sql` — customer ownership/auth changes and related RPC/policies.
 - `backend/supabase/functions/send-site-email/index.ts` — email API, authorization, message templates, private photo links.
+- `backend/supabase/functions/delete-customer-account/index.ts` — authenticated customer account deletion, recent-password verification, and cleanup of that customer's orders and private reference photos.
 - `docs/SUPABASE_SETUP.md` and `docs/EMAIL_SETUP.md` — account-level setup notes. These are guides, not application runtime configuration.
 - `frontend/.env.example` — placeholder names only; safe template for local environment setup.
 - `.github/workflows/deploy.yml` — GitHub Pages build and deployment workflow.
@@ -105,6 +106,7 @@ Schema files are useful for understanding the design, but the live project alrea
 - Set an admin role through a trusted Supabase admin process. Do not use `user_metadata` for permissions: users can edit their own metadata.
 - The frontend uses the publishable key, which is designed for browser exposure and depends on RLS for protection. Never place a service-role/secret key in `VITE_*`, frontend code, GitHub Pages variables, or committed files.
 - The email function validates the Supabase session for order messages, checks ownership for customer events, and requires the admin role for `admin_*` events. Contact-form email is public and includes a honeypot check.
+- The `delete-customer-account` function validates the caller's bearer token itself, requires a recent password-authenticated session, and uses the Supabase service-role credential only inside the function runtime to remove the caller's private photo objects, order rows, and Auth user. It is configured with `verify_jwt = false` because it performs this explicit token validation. Do not expose or move its privileged credential into the frontend.
 
 ### Important database functions
 
@@ -134,6 +136,7 @@ The customer and admin see step journeys tailored to their role. The database st
 - New reviews are unpublished until admin approval. Admin can show new reviews first, switch to all reviews, publish, hide, or delete. The public Reviews page displays six at a time, adds six with **Show more**, and can return to six with **Show less**.
 - Admin settings include public email, phone, address, map location (address or coordinates), and admin account email/password changes. Email changes may require confirmation from Supabase.
 - Signed-in customers can open the person icon in the navbar to change their account email or password on `/account`. Customer email changes may need confirmation through Supabase; local preview account updates stay in browser storage.
+- Customers can permanently delete their account in Account Settings after confirming and re-entering their password. In Supabase mode, the frontend calls `delete-customer-account`; it removes only the authenticated customer's order photo objects, orders, and Auth account. In preview mode, it removes the preview account and that account's browser-stored orders. Explain the permanence before confirmation.
 - The custom order photo selector enforces a five-photo maximum across device uploads, mobile camera capture, and Sukkar gallery selections. It provides local previews and remove controls before submission. In connected mode, all submitted photos are stored as private order reference objects.
 - Customer cancellation is available only before the order enters `Preparing`. `Cancelled` and `Collected` orders have separate customer/admin dismissal state: dismissing on one side leaves the other side's view intact.
 - The home page map uses the saved map location; the address, map and footer are editable through the Admin Dashboard settings.
@@ -191,7 +194,7 @@ Before a production change:
 1. Make the change locally and review the diff.
 2. Run `npm run lint` and `npm run build` when appropriate.
 3. For database changes, create/review a migration and confirm RLS behavior; do not casually rerun the initial schema SQL.
-4. For Edge Function changes, deploy `send-site-email` to the correct Supabase project and preserve its secrets.
+4. For Edge Function changes, deploy the relevant function (`send-site-email` or `delete-customer-account`) to the correct Supabase project. Preserve EmailJS and Supabase secrets; never commit their values. The account-deletion function must be deployed before account deletion works on the live site.
 5. Commit and push to `main` only when authorized. Check the GitHub Actions run and open the published URL, including a direct route such as `/my-orders`.
 
 Project Pages configuration assumes the repository name remains `Sukkar-Chocolate`. If deploying under another repository or a custom domain, revisit `frontend/vite.config.js`, router base path, email links, and GitHub Pages settings.

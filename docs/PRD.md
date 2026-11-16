@@ -38,6 +38,14 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - Customers can cancel an order until its status becomes Preparing. A cancelled order remains visible with a Cancelled status until the customer removes it from My Orders.
 - Customers can remove a Cancelled or Collected order from their own list. This does not remove it from the Admin Dashboard. After collection, My Orders offers a link to write a review.
 - Signed-in customers can open the person icon in the top-right navigation bar to change their account email and password. Supabase email changes require confirmation; local preview changes apply only in that browser.
+- Customers can permanently delete their account from Account Settings after confirming the action and re-entering their password. Account deletion also removes that customer's orders and attached private reference photos from Supabase. In local preview, it removes the preview account and its browser-stored orders.
+
+### Account deletion
+
+- The interface explains that account deletion is permanent and asks the customer to confirm and re-enter their password.
+- With Supabase connected, the server verifies the signed-in customer and recent password authentication, then deletes that customer's private order reference photos, order records, and Supabase Auth account. It must never delete another customer's data.
+- In local preview mode, deleting an account removes only that preview account and its associated browser-stored orders.
+- The `delete-customer-account` Supabase Edge Function must be deployed before the live website can complete account deletion.
 
 ### Order journey and messages
 
@@ -95,6 +103,7 @@ Home, Our Story, Gallery, Reviews, Custom Order, My Orders, Contact, and the pri
 - Customer and admin order journeys show the same current status. Both sides show the requested ready-by date and time, and the admin-confirmed collection date and time once ready.
 - Customers can cancel before status becomes Preparing. Cancelled and Collected orders remain until removed from each side independently; removal on one side leaves the other side's record intact.
 - Admin can enlarge attached order photos, manage gallery details and categories, moderate reviews, update contact details and map location, and change dashboard email or password.
+- A customer can permanently delete their account after password confirmation; the customer's orders and private reference photos are deleted with it.
 - The public gallery reflects dashboard photo names, descriptions, categories, and visibility. Removing a category reassigns its photos to Chocolate.
 - The Reviews page displays six items initially and supports showing six more at a time and returning with Show less.
 - Contact, social, map, and email links work on desktop and mobile. Forms show one appropriate success or error message.

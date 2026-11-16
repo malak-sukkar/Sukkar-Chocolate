@@ -22,6 +22,7 @@ For a Supabase-connected local run, copy `frontend/.env.example` to `frontend/.e
 
 - Home, story, gallery, and reviews
 - Custom order form, customer order status, and contact form. Customers can attach up to five photos from a device, mobile camera, or Sukkar gallery; cancel before preparation; and see the requested ready-by and confirmed collection schedules separately.
+- Customer account settings include email/password updates and account deletion. Deleting an account also removes that customer's orders and private order photos; the Supabase deletion function must be deployed for the live site to support it.
 - Admin Dashboard at `/admin`
 
 ## Guides

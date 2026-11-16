@@ -15,6 +15,7 @@ Customers can browse the site without an account. They need to sign in or create
 - Send a custom order request with a description, the date and time they need it by, allergy details, and up to five photos selected from their device, mobile camera, or Sukkar's gallery. They can remove a photo before submitting.
 - Follow the order journey, respond to a proposed price, and cancel before preparation begins in **My Orders**.
 - Open the person icon in the top-right of the navigation bar to change their account email or password.
+- Permanently delete their account from **Account Settings**. The customer must confirm and enter their password again. Their orders and uploaded reference photos are deleted with the account. The live website needs the account-deletion function deployed for this feature to work.
 - Send Sukkar a message through the contact form or ask about an existing order.
 
 The requested ready-by date must be at least three days ahead. Customers choose the time they need the order to be with them. Sukkar confirms a collection date and time using the requested date and time as a starting point; both can be changed. If the customer has an allergy or dietary requirement, they can choose **Yes** and describe it.

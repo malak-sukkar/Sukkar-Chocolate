@@ -102,7 +102,7 @@ export async function signInAdmin(email, password) {
   return session;
 }
 
-export async function registerCustomer(name, email, password) {
+export async function registerCustomer(name, email, password, emailRedirectTo) {
   if (!supabaseReady) {
     const accounts = JSON.parse(localStorage.getItem('sukkar-preview-accounts') || '[]');
     const normalizedEmail = email.trim().toLowerCase();
@@ -112,7 +112,8 @@ export async function registerCustomer(name, email, password) {
     localStorage.setItem('sukkar-preview-accounts', JSON.stringify([...accounts, account]));
     return { session: savePreviewSession(account), user: { id: account.id, email: account.email, user_metadata: { full_name: account.name } } };
   }
-  return request('/auth/v1/signup', { method: 'POST', body: { email, password, data: { full_name: name } } });
+  const redirectQuery = emailRedirectTo ? `?redirect_to=${encodeURIComponent(emailRedirectTo)}` : '';
+  return request(`/auth/v1/signup${redirectQuery}`, { method: 'POST', body: { email, password, data: { full_name: name } } });
 }
 
 export async function signInCustomer(email, password) {
@@ -131,6 +132,31 @@ export async function signInCustomer(email, password) {
 }
 
 export function signOutCustomer() { localStorage.removeItem('sukkar-customer-session'); }
+
+export async function deleteCustomerAccount(password, session) {
+  const email = session?.user?.email;
+  const userId = session?.user?.id;
+  if (!email || !userId) throw new Error('Please sign in again before deleting your account.');
+  const verifiedSession = await signInCustomer(email, password);
+  if (verifiedSession.user?.id !== userId) throw new Error('Could not verify this account. Please sign in again.');
+  if (!supabaseReady) {
+    const accounts = JSON.parse(localStorage.getItem('sukkar-preview-accounts') || '[]');
+    localStorage.setItem('sukkar-preview-accounts', JSON.stringify(accounts.filter((account) => account.id !== userId)));
+    const orders = JSON.parse(localStorage.getItem('sukkar-orders') || '[]');
+    const removedOrderIds = new Set(orders.filter((order) => order.customerUserId === userId).map((order) => order.id));
+    localStorage.setItem('sukkar-orders', JSON.stringify(orders.filter((order) => order.customerUserId !== userId)));
+    for (const key of ['sukkar-customer-hidden-orders']) {
+      const hidden = JSON.parse(localStorage.getItem(key) || '[]');
+      localStorage.setItem(key, JSON.stringify(hidden.filter((id) => !removedOrderIds.has(id))));
+    }
+    signOutCustomer();
+    window.dispatchEvent(new Event('sukkar-customer-auth'));
+    return;
+  }
+  await request('/functions/v1/delete-customer-account', { method: 'POST', body: {}, token: verifiedSession.access_token });
+  signOutCustomer();
+  window.dispatchEvent(new Event('sukkar-customer-auth'));
+}
 
 export function signOutAdmin() { localStorage.removeItem('sukkar-admin-session'); }
 

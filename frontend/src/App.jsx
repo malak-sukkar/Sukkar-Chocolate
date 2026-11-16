@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Link, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowDown, ArrowRight, BookOpen, CalendarDays, Check, ChevronDown, ChevronLeft, ChevronRight, Clock3, ClipboardList, Eye, EyeOff, Heart, House, Images, LogIn, LogOut, Mail, MapPin, Menu, Phone, ShoppingBag, Star, Trash2, UserPlus, UserRound, X } from 'lucide-react';
 import { FaFacebookF, FaInstagram } from 'react-icons/fa';
-import { cancelCustomerOrder, createRemoteOrder, dismissFinalOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
+import { cancelCustomerOrder, createRemoteOrder, deleteCustomerAccount, dismissFinalOrder, deleteRemoteGalleryItem, deleteRemoteOrder, deleteRemoteReview, deleteRemoteCategory, getAdminSession, getCustomerSession, listCustomerOrders, listRemoteOrders, loadAdminContent, loadPublicContent, registerCustomer, respondToPrice, savePublicReview, saveRemoteCategory, saveRemoteProductOverride, saveRemoteReview, saveRemoteSettings, sendSiteEmail, signInAdmin, signInCustomer, signOutAdmin, signOutCustomer, signedCustomerOrderPhoto, signedOrderPhoto, supabaseReady, updateAdminEmail, updateAdminPassword, updateCustomerEmail, updateCustomerPassword, updateRemoteGalleryItem, updateRemoteOrder, uploadRemoteGalleryPhotos } from './lib/supabase';
 import { products } from './data/products';
 import { reviews as initialReviews } from './data/reviews';
 import { countryCallingCodes } from './data/countryCallingCodes';
@@ -253,8 +253,11 @@ function CustomerAuth({ register = false }) {
   const location = useLocation();
   const requestedNext = new URLSearchParams(location.search).get('next') || '/';
   const next = requestedNext.startsWith('/') && !requestedNext.startsWith('//') ? requestedNext : '/';
+  const emailVerified = new URLSearchParams(location.search).get('verified') === '1';
+  const accountDeleted = new URLSearchParams(location.search).get('deleted') === '1';
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState(accountDeleted ? 'Your account, orders, and uploaded reference photos were permanently deleted.' : emailVerified ? 'Your email is verified. You can now sign in.' : '');
+  const [registrationComplete, setRegistrationComplete] = useState(false);
   const [sending, setSending] = useState(false);
   const submit = async (event) => {
     event.preventDefault();
@@ -266,14 +269,18 @@ function CustomerAuth({ register = false }) {
     try {
       if (register) {
         const fullName = `${data.get('firstName').trim()} ${data.get('lastName').trim()}`;
-        const result = await registerCustomer(fullName, data.get('email'), data.get('password'));
+        const confirmationUrl = new URL(`${import.meta.env.BASE_URL}sign-in`, window.location.origin);
+        confirmationUrl.searchParams.set('verified', '1');
+        confirmationUrl.searchParams.set('next', next);
+        const result = await registerCustomer(fullName, data.get('email'), data.get('password'), confirmationUrl.toString());
         const session = result.session || result;
         if (session.access_token) {
           localStorage.setItem('sukkar-customer-session', JSON.stringify(session));
           window.dispatchEvent(new Event('sukkar-customer-auth'));
           navigate(next);
         } else {
-          setMessage('Your account is created. Check your email to confirm it, then sign in.');
+          setRegistrationComplete(true);
+          setMessage('Your account was created successfully. We sent you a confirmation email. Verify your email address, then sign in.');
           form.reset();
         }
       } else {
@@ -293,10 +300,10 @@ function CustomerAuth({ register = false }) {
         <section className="account-form-area">
           <section className="form-panel account-panel">
             <span className="eyebrow">{register ? 'A warm welcome to Sukkar' : 'Good to see you again'}</span>
-            <h2>{register ? 'Create your account' : 'Welcome back'}</h2>
-            <p className="account-form-intro">{register ? 'A few details and you’ll be ready to order something sweet.' : 'Sign in to see your orders and continue where you left off.'}</p>
+            <h2>{register ? registrationComplete ? 'Check your email' : 'Create your account' : accountDeleted ? 'Account deleted' : 'Welcome back'}</h2>
+            <p className="account-form-intro">{register ? registrationComplete ? 'Follow the confirmation link in your email. You’ll return here to sign in.' : 'A few details and you’ll be ready to order something sweet.' : accountDeleted ? 'You can create a new account whenever you’re ready.' : emailVerified ? 'Your email is confirmed. Sign in to continue.' : 'Sign in to see your orders and continue where you left off.'}</p>
             {!supabaseReady && <p className="account-notice">Preview account: saved only in this browser for testing. It is not a live account.</p>}
-            <form className="form-grid" onSubmit={submit}>
+            {!registrationComplete && <form className="form-grid" onSubmit={submit}>
               {register && <>
                 <label>First name<input name="firstName" required maxLength="40" autoComplete="given-name" placeholder="First name" /></label>
                 <label>Last name<input name="lastName" required maxLength="40" autoComplete="family-name" placeholder="Last name" /></label>
@@ -304,8 +311,8 @@ function CustomerAuth({ register = false }) {
               <label className="full-field">Email address<input name="email" type="email" required autoComplete="email" placeholder="you@example.com" /></label>
               <label className="full-field">Password<PasswordInput id="customer-password" name="password" required minLength="8" autoComplete={register ? 'new-password' : 'current-password'} placeholder={register ? 'At least 8 characters' : 'Your password'} /></label>
               <button className="button account-submit" type="submit" disabled={sending}>{sending ? 'Please wait…' : register ? 'Create account' : 'Sign in'} <ArrowRight size={15} /></button>
-            </form>
-            <p className="account-switch">{register ? 'Already have an account?' : 'New to Sukkar?'} <Link to={`${register ? '/sign-in' : '/register'}?next=${encodeURIComponent(next)}`}>{register ? 'Sign in' : 'Create an account'}</Link></p>
+            </form>}
+            {registrationComplete ? <Link className="button account-submit" to={`/sign-in?next=${encodeURIComponent(next)}`}>Go to sign in <ArrowRight size={15}/></Link> : <p className="account-switch">{register ? 'Already have an account?' : 'New to Sukkar?'} <Link to={`${register ? '/sign-in' : '/register'}?next=${encodeURIComponent(next)}`}>{register ? 'Sign in' : 'Create an account'}</Link></p>}
           </section>
           {message && <p className="success-message account-success-outside" role="status">{message}</p>}
           {error && <p className="error-message account-error-outside" role="alert">{error}</p>}
@@ -580,12 +587,17 @@ function OrderStatusJourney({ status, admin = false, collectionTime = '' }) {
 function CustomerAccount() {
   const navigate=useNavigate();
   const [session,setSession]=useState(getCustomerSession);
+  const [accountDeleted,setAccountDeleted]=useState(false);
   const accountName=String(session?.user?.user_metadata?.full_name||'').trim()||String(session?.user?.email||'').split('@')[0]||'there';
   const [saving,setSaving]=useState(false);
   const [emailMessage,setEmailMessage]=useState('');
   const [emailError,setEmailError]=useState('');
   const [passwordMessage,setPasswordMessage]=useState('');
   const [passwordError,setPasswordError]=useState('');
+  const [deleteDialogOpen,setDeleteDialogOpen]=useState(false);
+  const [deletePassword,setDeletePassword]=useState('');
+  const [deleteError,setDeleteError]=useState('');
+  const [deleting,setDeleting]=useState(false);
 
   useEffect(()=>{
     const syncSession=()=>setSession(getCustomerSession());
@@ -594,8 +606,8 @@ function CustomerAccount() {
     return()=>{window.removeEventListener('sukkar-customer-auth',syncSession);window.removeEventListener('storage',syncSession);};
   },[]);
   useEffect(()=>{
-    if(!session) navigate(`/sign-in?next=${encodeURIComponent('/account')}`,{replace:true});
-  },[navigate,session]);
+    if(!session&&!accountDeleted) navigate(`/sign-in?next=${encodeURIComponent('/account')}`,{replace:true});
+  },[accountDeleted,navigate,session]);
 
   const saveEmail=async(event)=>{
     event.preventDefault();
@@ -630,7 +642,22 @@ function CustomerAccount() {
     finally{setSaving(false);}
   };
 
-  return <main className="inner-page account-settings-page"><PageIntro eyebrow={session?`Welcome, ${accountName}`:'Your Sukkar account'} title={<>Account <em>settings.</em></>} text="Update the email address or password you use to sign in."/>{session&&<section className="customer-account-settings"><div><span className="eyebrow">Account security</span><h2>Your sign-in details</h2><p>Keep your customer account details up to date.{!supabaseReady&&' Preview account changes are saved only in this browser.'}</p></div><div className="customer-account-forms"><form onSubmit={saveEmail} className="form-grid"><label className="full-field">Current email<input type="email" value={session.user?.email||''} readOnly /></label><label className="full-field">New email address<input name="customerEmail" type="email" required autoComplete="email" placeholder="new@example.com" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change email'} <ArrowRight size={15}/></button>{emailMessage&&<p className="success-message full-field" role="status">{emailMessage}</p>}{emailError&&<p className="error-message full-field" role="alert">{emailError}</p>}</form><form onSubmit={savePassword} className="form-grid"><label className="full-field">New password<PasswordInput id="customer-new-password" name="newPassword" required minLength="8" autoComplete="new-password" placeholder="At least 8 characters" /></label><label className="full-field">Confirm new password<PasswordInput id="customer-confirm-password" name="confirmPassword" required minLength="8" autoComplete="new-password" placeholder="Enter the new password again" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change password'} <ArrowRight size={15}/></button>{passwordMessage&&<p className="success-message full-field" role="status">{passwordMessage}</p>}{passwordError&&<p className="error-message full-field" role="alert">{passwordError}</p>}</form></div></section>}</main>;
+  const deleteAccount=async(event)=>{
+    event.preventDefault();
+    setDeleteError('');
+    setDeleting(true);
+    try{
+      await deleteCustomerAccount(deletePassword,session);
+      signOutCustomer();
+      setAccountDeleted(true);
+      setSession(null);
+      navigate('/sign-in?deleted=1',{replace:true});
+    }catch(cause){
+      setDeleteError(cause.message||'Could not delete your account. Please try again.');
+    }finally{setDeleting(false);}
+  };
+
+  return <main className="inner-page account-settings-page"><PageIntro eyebrow={session?`Welcome, ${accountName}`:'Your Sukkar account'} title={<>Account <em>settings.</em></>} text="Update the email address or password you use to sign in."/>{session&&<><section className="customer-account-settings"><div><span className="eyebrow">Account security</span><h2>Your sign-in details</h2><p>Keep your customer account details up to date.{!supabaseReady&&' Preview account changes are saved only in this browser.'}</p></div><div className="customer-account-forms"><form onSubmit={saveEmail} className="form-grid"><label className="full-field">Current email<input type="email" value={session.user?.email||''} readOnly /></label><label className="full-field">New email address<input name="customerEmail" type="email" required autoComplete="email" placeholder="new@example.com" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change email'} <ArrowRight size={15}/></button>{emailMessage&&<p className="success-message full-field" role="status">{emailMessage}</p>}{emailError&&<p className="error-message full-field" role="alert">{emailError}</p>}</form><form onSubmit={savePassword} className="form-grid"><label className="full-field">New password<PasswordInput id="customer-new-password" name="newPassword" required minLength="8" autoComplete="new-password" placeholder="At least 8 characters" /></label><label className="full-field">Confirm new password<PasswordInput id="customer-confirm-password" name="confirmPassword" required minLength="8" autoComplete="new-password" placeholder="Enter the new password again" /></label><button className="button" type="submit" disabled={saving}>{saving?'Saving…':'Change password'} <ArrowRight size={15}/></button>{passwordMessage&&<p className="success-message full-field" role="status">{passwordMessage}</p>}{passwordError&&<p className="error-message full-field" role="alert">{passwordError}</p>}</form></div></section><section className="customer-account-delete"><div><span className="eyebrow">Account removal</span><h2>Delete your account</h2><p>This permanently deletes your account, all your orders, and uploaded order photos.</p></div><button className="customer-delete-trigger" type="button" onClick={()=>{setDeleteError('');setDeleteDialogOpen(true);}}>Delete account <Trash2 size={16}/></button></section>{deleteDialogOpen&&<div className="account-delete-overlay" role="presentation"><section className="account-delete-dialog" role="dialog" aria-modal="true" aria-labelledby="delete-account-title"><button className="lightbox-close" type="button" aria-label="Close" onClick={()=>setDeleteDialogOpen(false)}><X size={19}/></button><span className="eyebrow">This can’t be undone</span><h2 id="delete-account-title">Delete your account?</h2><p>Your account, orders, and reference photos will be permanently deleted. Enter your password to confirm.</p><form className="form-grid" onSubmit={deleteAccount}><label className="full-field">Your password<PasswordInput id="delete-account-password" name="password" required autoComplete="current-password" value={deletePassword} onChange={(event)=>setDeletePassword(event.target.value)} /></label>{deleteError&&<p className="error-message full-field" role="alert">{deleteError}</p>}<div className="account-delete-actions"><button className="button button-outline" type="button" disabled={deleting} onClick={()=>{setDeleteDialogOpen(false);setDeletePassword('');setDeleteError('');}}>Keep my account</button><button className="customer-delete-confirm" type="submit" disabled={deleting}>{deleting?'Deleting…':'Permanently delete'} <Trash2 size={15}/></button></div></form></section></div>}</>}</main>;
 }
 
 function MyOrders() {
