@@ -2,6 +2,10 @@
 
 A responsive React + JavaScript website for Sukkar handmade chocolate. Built with Vite and React Router. Supabase provides the backend for shared customer orders, private reference photos, and admin authentication.
 
+## Live website
+
+[Visit Sukkar Chocolate](https://malak-sukkar.github.io/Sukkar-Chocolate/)
+
 ## Project structure
 
 - `frontend/` — React app, static assets, Vite configuration, and local frontend environment template.
