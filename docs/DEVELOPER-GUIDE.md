@@ -20,6 +20,22 @@ This guide is the starting point for a developer taking over the Sukkar Chocolat
 - `package.json`, `package-lock.json`, and `.github/workflows/` stay at the repository root so one set of npm scripts and one deployment workflow can manage the project.
 - `docs/` contains the project brief, product requirements, owner guide, developer handoff, and service setup guides.
 
+### Planning record: original direction and finished app
+
+The original direction was a responsive Sukkar website where customers could explore chocolate, request a custom order, and contact the owner; the owner needed a way to manage requests and public content. The implementation grew from that starting scope. This comparison records the important choices and changes so the original plan is not confused with the final feature set.
+
+| Area | Plan / reason for the choice | Finished app and development changes |
+| --- | --- | --- |
+| Frontend | Build a responsive website with clear public pages and an order form. | React 19, Vite, React Router, and CSS provide the public pages, customer account pages, and Admin Dashboard. Layouts were refined iteratively for phone, tablet, and desktop sizes. |
+| Backend and hosting | Avoid maintaining a separate server while still sharing customer and owner data online. | Supabase Auth, Postgres, Storage, RLS, and Edge Functions provide backend services; there is no Express server. GitHub Pages hosts the frontend, and GitHub Actions deploys it from `main`. |
+| Orders | Let customers request a handmade creation and let the owner respond. | The flow now includes sign-in, up to five private reference photos, a requested ready-by date/time, owner acceptance or rejection, a price proposal the customer accepts or declines, and a separate owner-confirmed collection schedule. Customers can cancel before `Preparing`; collection is marked by the owner. Payment remains at collection; online payment and delivery checkout are out of scope. |
+| Owner content | Give the owner control over orders and the website’s changing content. | The Admin Dashboard manages gallery names, descriptions, categories and visibility; review moderation; contact details; map location; and admin account settings. Review browsing is paginated six at a time. |
+| Design evidence | Make the site consistent and responsive. | The interface was adjusted through review at multiple screen sizes. The current wireframes were reconstructed after implementation for documentation; they are not evidence that every layout was completed before coding. |
+
+**Key risks and responses:** because the frontend is public, the Supabase publishable key is not treated as a password; RLS limits customers to their own orders, and admin permissions are checked in database policies. Private service-role and EmailJS credentials stay in Supabase Function Secrets. Reference photos use private Storage and temporary signed links. Email delivery depends on EmailJS and recipient spam filters, so the site cannot guarantee inbox placement. Local preview mode uses browser storage only and must not be mistaken for shared production data.
+
+**How to explain the plan-to-build changes:** explain that the site began as a way to show products and collect custom requests. As the owner/customer process became clearer, authentication, shared database records, private photos, a customer price decision, matching status journeys, and an owner-selected collection schedule were added. The final app preserves the original business goal while implementing a more complete order lifecycle and owner workflow.
+
 The project supports both a connected Supabase mode and a limited local preview mode. These modes are not interchangeable: local preview data is stored in the current browser and does not reach the live website or another device.
 
 ## 2. First-time local setup
@@ -202,10 +218,11 @@ Project Pages configuration assumes the repository name remains `Sukkar-Chocolat
 ## 10. Troubleshooting guide
 
 - **Site runs locally but data is missing on another device:** likely local preview mode, or the local `frontend/.env.local` does not point to the expected Supabase project.
-- **Admin can sign in but Admin Dashboard rejects the account:** verify the correct Supabase Auth user and `app_metadata.role = "admin"`, then sign out/in to refresh the JWT claims.
+- **A Supabase user can sign in, but Admin Dashboard denies access:** verify that it is the intended Auth user and that trusted Supabase app metadata contains `app_metadata.role = "admin"`. Sign out and back in after changing the role so the session receives a refreshed JWT claim. Do not grant dashboard access through editable `user_metadata`.
 - **Gallery image upload or order photo preview fails:** check the correct bucket, object path, Storage policies, current session, and signed URL expiration. Keep order reference photos private.
-- **Email fails:** verify the Edge Function is deployed to the connected project; its required EmailJS secrets exist; EmailJS service/template identifiers are correct; template variable names match; Gmail server API sending is enabled; Sukkar's recipient email is saved in Admin Dashboard; and Supabase function logs show the underlying sanitized error.
+- **Email fails:** verify the `send-site-email` Edge Function is deployed to the connected project; its four EmailJS secrets exist; the EmailJS service/template identifiers and template variable names match `docs/EMAIL_SETUP.md`; and EmailJS is allowed to send from a non-browser application. Confirm the current Sukkar contact email is saved in Admin Dashboard → Site details. That address controls Sukkar's recipient and reply-to address; it does not change the sender mailbox. To send from a different Gmail account, reconnect that account in EmailJS. Check Supabase function logs for the sanitized provider error; the website intentionally returns a generic message.
 - **Price email link fails or points to an old address:** inspect the hard-coded order URL in `backend/supabase/functions/send-site-email/index.ts`, redeploy the function, and confirm the website base path.
+- **Customer account deletion fails:** confirm `delete-customer-account` is deployed to the connected Supabase project and that its required Supabase secrets are available. The function requires a valid signed-in customer session and recent password verification. Check the function logs for the failure; never work around it by putting the service-role key in the frontend.
 - **Direct URL works locally but not on Pages:** verify `404.html` copy and GitHub Pages base path `/Sukkar-Chocolate/`; check the workflow result.
 - **Unexpected permission issue:** inspect the relevant RLS policy and use an authenticated request with the expected user role/ownership. Do not work around RLS by exposing a privileged key.
 
