@@ -17,7 +17,8 @@ const corsHeaders = (request: Request) => {
     'Vary': 'Origin',
   };
 };
-const response = (request: Request, body: Record<string, unknown>, status = 200) => Response.json(body, { status, headers: corsHeaders(request) });
+const response = (request: Request, body: Record<string, unknown>, status = 200, extraHeaders: Record<string, string> = {}) => Response.json(body, { status, headers: { ...corsHeaders(request), ...extraHeaders } });
+const secondsUntilNextWindow = (windowSeconds: number) => windowSeconds - Math.floor(Date.now() / 1000) % windowSeconds;
 const clean = (value: unknown, max: number) => String(value ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
 const digest = async (value: string) => {
   const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
@@ -48,17 +49,26 @@ Deno.serve(async (request) => {
   const address = clientAddress(request);
   if (!address) return response(request, { error: 'Please try submitting your review again.' }, 503);
   const addressKey = `review:${await digest(address)}`;
-  const firstLimit = await adminClient.rpc('consume_rate_limit', { p_key: await digest(`${addressKey}:hour`), p_window_seconds: 3600, p_max_requests: 3 });
+  const firstLimit = await adminClient.rpc('consume_rate_limit', { p_key: await digest(`${addressKey}:hour`), p_window_seconds: 3600, p_max_requests: 10 });
   if (firstLimit.error) {
     console.error('Review rate limit check failed', { message: firstLimit.error.message });
     return response(request, { error: 'Review submission is temporarily unavailable. Please try again later.' }, 503);
   }
-  const dailyLimit = await adminClient.rpc('consume_rate_limit', { p_key: await digest(`${addressKey}:day`), p_window_seconds: 86400, p_max_requests: 10 });
+  const dailyLimit = await adminClient.rpc('consume_rate_limit', { p_key: await digest(`${addressKey}:day`), p_window_seconds: 86400, p_max_requests: 30 });
   if (dailyLimit.error) {
     console.error('Review rate limit check failed', { message: dailyLimit.error.message });
     return response(request, { error: 'Review submission is temporarily unavailable. Please try again later.' }, 503);
   }
-  if (firstLimit.data !== true || dailyLimit.data !== true) return response(request, { error: 'Too many reviews were submitted from this connection. Please try again later.' }, 429);
+  if (firstLimit.data !== true || dailyLimit.data !== true) {
+    const retryAfterSeconds = Math.max(
+      firstLimit.data === true ? 0 : secondsUntilNextWindow(3600),
+      dailyLimit.data === true ? 0 : secondsUntilNextWindow(86400),
+    );
+    return response(request, {
+      error: "You've reached the review limit. Please try again later.",
+      retry_after_seconds: retryAfterSeconds,
+    }, 429, { 'Retry-After': String(retryAfterSeconds) });
+  }
 
   const { error } = await adminClient.from('reviews').insert({
     customer_name: customerName,

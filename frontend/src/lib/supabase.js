@@ -28,7 +28,12 @@ async function request(path, { method = 'GET', body, token, headers = {} } = {})
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
   const data = response.status === 204 ? null : await response.json().catch(() => null);
-  if (!response.ok) throw new Error(data?.message || data?.msg || data?.error || 'The request could not be completed.');
+  if (!response.ok) {
+    const error = new Error(data?.message || data?.msg || data?.error || 'The request could not be completed.');
+    error.status = response.status;
+    error.retryAfterSeconds = Number(data?.retry_after_seconds || response.headers.get('Retry-After')) || null;
+    throw error;
+  }
   return data;
 }
 

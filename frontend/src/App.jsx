@@ -413,10 +413,24 @@ function Reviews() {
   const [rating, setRating] = useState(0);
   const [ratingError, setRatingError] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [reviewRetryAfterSeconds, setReviewRetryAfterSeconds] = useState(null);
+  useEffect(() => {
+    if (reviewRetryAfterSeconds === null || reviewRetryAfterSeconds <= 0) return undefined;
+    const countdown = window.setInterval(() => setReviewRetryAfterSeconds((remaining) => Math.max(0, remaining - 1)), 1000);
+    return () => window.clearInterval(countdown);
+  }, [reviewRetryAfterSeconds]);
+  const retryTimeLabel = (seconds) => {
+    const minutes = Math.max(1, Math.ceil(seconds / 60));
+    if (minutes < 60) return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'}${remainingMinutes ? ` and ${remainingMinutes} ${remainingMinutes === 1 ? 'minute' : 'minutes'}` : ''}`;
+  };
   const addReview = async (event) => {
     event.preventDefault();
     const form = event.currentTarget;
     setSubmitError('');
+    setReviewRetryAfterSeconds(null);
     setSubmitted(false);
     if (!rating) { setRatingError('Please choose a star rating.'); return; }
     setRatingError('');
@@ -426,12 +440,17 @@ function Reviews() {
       if (supabaseReady) await savePublicReview(review);
       else { const next = [review, ...items]; write(STORAGE.reviews,next); setItems(next); }
       setSubmitted(true); setRating(0); setRatingError(''); form.reset();
-    } catch { setSubmitError('We could not submit your review. Please try again.'); }
+    } catch (error) {
+      if (error?.status === 429) {
+        setSubmitError("You've reached the review limit. Please try again later.");
+        setReviewRetryAfterSeconds(error.retryAfterSeconds);
+      } else setSubmitError('We could not submit your review. Please try again.');
+    }
   };
   const visibleItems = items.slice(0, visibleCount);
   const remainingReviews = items.length - visibleItems.length;
   const nextReviewCount = Math.min(6, remainingReviews);
-  return <main className="inner-page"><PageIntro eyebrow="Notes from our customers" title={<>The sweetest <em>words.</em></>} text="A little note after a special day means the world to us."/><div className="reviews-list" id="customer-reviews">{items.length ? visibleItems.map((review)=><article className="review-card" key={review.id}><span className="review-by">{review.name}</span><ReviewStars rating={review.rating}/><p>{review.quote}</p></article>) : <div className="empty-state">No reviews yet. Be the first to share a little note.</div>}</div>{visibleCount > 6 || remainingReviews > 0 ? <div className="reviews-load-more">{visibleCount > 6 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount(6)}>Show less</button>}{remainingReviews > 0 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount((count) => count + 6)}>Show {nextReviewCount} more {nextReviewCount === 1 ? 'review' : 'reviews'}</button>}</div> : null}<section className="form-panel review-form-panel" id="write-review"><span className="eyebrow">Leave a little note</span><h2>How was your <em>Sukkar?</em></h2><form onSubmit={addReview} className="form-grid"><label className="email-honeypot" aria-hidden="true">Website<input name="website" tabIndex="-1" autoComplete="off"/></label><label>Your name<input name="name" required maxLength="60" placeholder="The name you’d like us to use"/></label><fieldset className="full-field review-rating-field"><legend>Your rating</legend><div className="rating-picker" role="group" aria-label="Choose a star rating">{[1,2,3,4,5].map((stars)=><button key={stars} type="button" className={stars <= rating ? 'rating-star selected' : 'rating-star'} aria-label={`${stars} ${stars===1?'star':'stars'}`} aria-pressed={rating===stars} onClick={()=>{setRating(stars);setRatingError('');}}>{stars <= rating ? '★' : '☆'}</button>)}</div>{ratingError&&<small className="error-message" role="alert">{ratingError}</small>}</fieldset><label className="full-field">Your review<textarea name="review" required maxLength="500" rows="4" placeholder="Tell us what made it special…"/></label><button className="button" type="submit">Share your review <ArrowRight size={16}/></button></form></section>{submitted&&<p className="success-message review-success-outside" role="status">{supabaseReady ? 'Thank you — your review has been sent for approval.' : 'Thank you — your kind words have been added.'}</p>}{submitError&&<p className="error-message review-error-outside" role="alert">{submitError}</p>}</main>;
+  return <main className="inner-page"><PageIntro eyebrow="Notes from our customers" title={<>The sweetest <em>words.</em></>} text="A little note after a special day means the world to us."/><div className="reviews-list" id="customer-reviews">{items.length ? visibleItems.map((review)=><article className="review-card" key={review.id}><span className="review-by">{review.name}</span><ReviewStars rating={review.rating}/><p>{review.quote}</p></article>) : <div className="empty-state">No reviews yet. Be the first to share a little note.</div>}</div>{visibleCount > 6 || remainingReviews > 0 ? <div className="reviews-load-more">{visibleCount > 6 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount(6)}>Show less</button>}{remainingReviews > 0 && <button className="button button-outline" type="button" aria-controls="customer-reviews" onClick={() => setVisibleCount((count) => count + 6)}>Show {nextReviewCount} more {nextReviewCount === 1 ? 'review' : 'reviews'}</button>}</div> : null}<section className="form-panel review-form-panel" id="write-review"><span className="eyebrow">Leave a little note</span><h2>How was your <em>Sukkar?</em></h2><form onSubmit={addReview} className="form-grid"><label className="email-honeypot" aria-hidden="true">Website<input name="website" tabIndex="-1" autoComplete="off"/></label><label>Your name<input name="name" required maxLength="60" placeholder="The name you’d like us to use"/></label><fieldset className="full-field review-rating-field"><legend>Your rating</legend><div className="rating-picker" role="group" aria-label="Choose a star rating">{[1,2,3,4,5].map((stars)=><button key={stars} type="button" className={stars <= rating ? 'rating-star selected' : 'rating-star'} aria-label={`${stars} ${stars===1?'star':'stars'}`} aria-pressed={rating===stars} onClick={()=>{setRating(stars);setRatingError('');}}>{stars <= rating ? '★' : '☆'}</button>)}</div>{ratingError&&<small className="error-message" role="alert">{ratingError}</small>}</fieldset><label className="full-field">Your review<textarea name="review" required maxLength="500" rows="4" placeholder="Tell us what made it special…"/></label><button className="button" type="submit">Share your review <ArrowRight size={16}/></button></form></section>{submitted&&<p className="success-message review-success-outside" role="status">{supabaseReady ? 'Thank you — your review has been sent for approval.' : 'Thank you — your kind words have been added.'}</p>}{submitError&&<p className="error-message review-error-outside" role="alert">{submitError}{reviewRetryAfterSeconds !== null && <><br/><span>{reviewRetryAfterSeconds > 0 ? `You can submit again in ${retryTimeLabel(reviewRetryAfterSeconds)}.` : 'You can try submitting again now.'}</span></>}</p>}</main>;
 }
 
 function CustomOrder() {
